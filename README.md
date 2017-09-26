@@ -8,12 +8,9 @@ used [here](https://github.com/Werbellin/ID_flat_ntupler/blob/master/Ntuplizer/p
 CMSSW_VERSION=CMSSW_8_0_28
 cmsrel $CMSSW_VERSION
 cd $CMSSW_VERSION/src
-mkdir Ntuplizer
-cd Ntuplizer
-git clone https://github.com/aminnj/electronML
-cd ..
+git clone https://github.com/aminnj/electronML 
 scram b -j10
-cd Ntuplizer/electronML
+cd electronML/Ntuplizer/python
 ```
 
 ## Running

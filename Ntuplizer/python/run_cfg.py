@@ -59,6 +59,7 @@ process.egmPhotonIsolationMiniAOD = egmPhotonIsolationMiniAOD.clone()
 #process.TFileService = cms.Service("TFileService", fileName = cms.string('/data/DATA/temp_pigard/eID/') )
 
 tle_ntuple = cms.EDAnalyzer('Ntuplizer',
+# tle_ntuple = cms.EDAnalyzer('electronML',
                                    inputFileFormat = cms.untracked.string(fileFormat),
                                    outputPath = cms.string(""), #process.TFileService.fileName,
                                    outputFile = cms.string('TLE'),
