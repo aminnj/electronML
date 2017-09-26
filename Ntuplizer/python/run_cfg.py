@@ -2,7 +2,7 @@ import FWCore.ParameterSet.Config as cms
 
 process = cms.Process("Demo")
 
-process.dump=cms.EDAnalyzer('EventContentAnalyzer')
+# process.dump=cms.EDAnalyzer('EventContentAnalyzer')
 process.load("FWCore.MessageService.MessageLogger_cfi")
 
 
@@ -13,9 +13,11 @@ process.load("Configuration.StandardSequences.MagneticField_38T_cff")
 process.load("TrackingTools.TransientTrack.TransientTrackBuilder_cfi")
 process.load("Configuration.StandardSequences.FrontierConditions_GlobalTag_condDBv2_cff")
 
+
 process.options   = cms.untracked.PSet( wantSummary = cms.untracked.bool(True) )
 
 from PhysicsTools.SelectorUtils.tools.vid_id_tools import *
+
 # turn on VID producer, indicate data format  to be
 # DataFormat.AOD or DataFormat.MiniAOD, as appropriate 
 fileFormat = 'miniAOD'
@@ -58,8 +60,8 @@ process.egmPhotonIsolationMiniAOD = egmPhotonIsolationMiniAOD.clone()
 
 #process.TFileService = cms.Service("TFileService", fileName = cms.string('/data/DATA/temp_pigard/eID/') )
 
-tle_ntuple = cms.EDAnalyzer('Ntuplizer',
 # tle_ntuple = cms.EDAnalyzer('electronML',
+tle_ntuple = cms.EDAnalyzer('Ntuplizer',
                                    inputFileFormat = cms.untracked.string(fileFormat),
                                    outputPath = cms.string(""), #process.TFileService.fileName,
                                    outputFile = cms.string('TLE'),
@@ -133,8 +135,8 @@ process.source = cms.Source("PoolSource",
 #    fileNames = cms.untracked.vstring('file:/data_CMS/cms/davignon/Trigger_WithThomas/CMSSW_7_6_0_pre7/src/L1Trigger/L1TNtuples/00BEC5EF-1472-E511-806C-02163E0141EA.root')
 fileNames = cms.untracked.vstring(
     # DYJetsToLL_M-50_TuneCUETP8M1_13TeV-madgraphMLM-pythia8/RunIISummer16MiniAODv2-PUMoriond17_80X_mcRun2_asymptotic_2016_TrancheIV_v6_ext1-v2/MINIAODSIM
-    # '/store/mc/RunIISummer16MiniAODv2/DYJetsToLL_M-50_TuneCUETP8M1_13TeV-madgraphMLM-pythia8/MINIAODSIM/PUMoriond17_80X_mcRun2_asymptotic_2016_TrancheIV_v6_ext1-v2/50000/024D0A89-34C4-E611-AEF9-008CFA111348.root',
-    'file:024D0A89-34C4-E611-AEF9-008CFA111348.root', # above  file
+    '/store/mc/RunIISummer16MiniAODv2/DYJetsToLL_M-50_TuneCUETP8M1_13TeV-madgraphMLM-pythia8/MINIAODSIM/PUMoriond17_80X_mcRun2_asymptotic_2016_TrancheIV_v6_ext1-v2/50000/024D0A89-34C4-E611-AEF9-008CFA111348.root',
+    # 'file:024D0A89-34C4-E611-AEF9-008CFA111348.root', # above  file
 # '/store/mc/RunIIFall15DR76/DYJetsToLL_M-50_TuneCUETP8M1_13TeV-madgraphMLM-pythia8/AODSIM/PU25nsData2015v1_76X_mcRun2_asymptotic_v12-v1/00000/08DC4220-16A7-E511-AF59-1CC1DE19286E.root'
 #'/store/mc/RunIIFall15MiniAODv2/GluGluHToZZTo4L_M125_13TeV_powheg2_JHUgenV6_pythia8/MINIAODSIM/PU25nsData2015v1_76X_mcRun2_asymptotic_v12-v1/50000/0AFC3AB4-96B9-E511-AE01-5065F3817221.root',
 #'/store/mc/RunIIFall15MiniAODv2/GluGluHToZZTo4L_M125_13TeV_powheg2_JHUgenV6_pythia8/MINIAODSIM/PU25nsData2015v1_76X_mcRun2_asymptotic_v12-v1/50000/06A78A71-97B9-E511-A22A-24BE05C3CBD1.root',
