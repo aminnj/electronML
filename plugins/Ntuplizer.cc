@@ -676,6 +676,11 @@ void Ntuplizer::beginJob()
   _mytree->Branch("ele_pt", &ele_pT);
   _mytree->Branch("ele_eta", &ele_eta);
 
+  _mytree->Branch("rhs_e", &rhs_e);
+  _mytree->Branch("rhs_iphi", &rhs_iphi);
+  _mytree->Branch("rhs_ieta", &rhs_ieta);
+  _mytree->Branch("ele_3x3", &ele_3x3);
+
 
  // _mytree->Branch("mc_gen_ele_p4", &_mc_gen_ele_p4);
   _mytree->Branch("mc_gen_pt", &mc_gen_pT);
@@ -1101,10 +1106,17 @@ void Ntuplizer::FillElectron(const edm::Ptr<reco::GsfElectron> ielectron)
 
     ele_ID1 = ele_ID1_value;
     ele_ID2 = ele_ID2_value;
-    std::cout <<  "IDs: ele_ID1: " << ele_ID1 <<  " electronID1_name: " << electronID1_name <<  std::endl;
+    // std::cout <<  "IDs: ele_ID1: " << ele_ID1 <<  " electronID1_name: " << electronID1_name <<  std::endl;
 
     ele_ID1_cat = ele_ID1_cat;
     ele_ID2_cat = ele_ID2_cat;
+
+    ele_pT = ielectron->pt();
+    ele_eta = ielectron->eta();
+    ele_trackMomentumAtVtx_R = ielectron->trackMomentumAtVtx().R();
+    ele_full5x5_hcalOverEcal = ielectron->full5x5_hcalOverEcal();
+    ele_echarge = ielectron->charge(); 
+//    ele_rho = 
 
     //ele_ID1_pass = (*ID1_pass_map)[ielectron]);
     //ele_ID2_pass = (*ID2_pass_map)[ielectron]);
@@ -1122,95 +1134,43 @@ void Ntuplizer::FillElectron(const edm::Ptr<reco::GsfElectron> ielectron)
   // RecHits
   // /cvmfs/cms.cern.ch/slc6_amd64_gcc493/cms/cmssw/CMSSW_8_0_20/src/DataFormats/PatCandidates/interface
 
-    auto seed = pat_ele->superCluster()->seed();
-    std::cout <<  " seed->size(): " << seed->size() <<  std::endl;
-    auto rechits = pat_ele->recHits();
-    auto clusters = pat_ele->basicClusters();
-    std::cout <<  " clusters.size(): " << clusters.size() <<  std::endl;
+    // auto seed = pat_ele->superCluster()->seed();
+    // std::cout <<  " seed->size(): " << seed->size() <<  std::endl;
+    // // auto rechits = pat_ele->recHits();
+    // auto clusters = pat_ele->basicClusters();
+    // std::cout <<  " clusters.size(): " << clusters.size() <<  std::endl;
+    // std::cout <<  " seed->energy(): " << seed->energy() <<  std::endl;
+    // std::cout <<  " seed->hitsAndFractions().size(): " << seed->hitsAndFractions().size() <<  std::endl;
+    //   // for(size_t ihit = 0; ihit<seed->size(); ++ ihit){
+    //   //       auto hit = (seed)[ihit];
+    //   //       std::cout <<  " hit.eta(): " << hit.eta() <<  " hit.phi(): " << hit.phi() <<  " hit.energy(): " << hit.energy() <<  std::endl;
+    //   // }
 
-    std::cout <<  " seed->energy(): " << seed->energy() <<  std::endl;
-    std::cout <<  " seed->hitsAndFractions().size(): " << seed->hitsAndFractions().size() <<  std::endl;
-      // for(size_t ihit = 0; ihit<seed->size(); ++ ihit){
-      //       auto hit = (seed)[ihit];
-      //       std::cout <<  " hit.eta(): " << hit.eta() <<  " hit.phi(): " << hit.phi() <<  " hit.energy(): " << hit.energy() <<  std::endl;
-      // }
-
-    for (auto pair : seed->hitsAndFractions()) {
-        // auto detid = pair.first;
-        auto fraction = pair.second;
-        std::cout <<  " fraction: " << fraction <<  std::endl;
-    }
-
-  // https://github.com/cms-sw/cmssw/blob/09c3fce6626f70fd04223e7dacebf0b485f73f54/DataFormats/EcalRecHit/src/EcalRecHit.cc
-  // https://github.com/cms-sw/cmssw/blob/09c3fce6626f70fd04223e7dacebf0b485f73f54/DataFormats/EcalDetId/interface/EBDetId.h
-  // for (auto hit : rechits) {
-    // USE lazycluster tool thing from ntuplemaker FIXME
-    // USE lazycluster tool thing from ntuplemaker FIXME
-    // USE lazycluster tool thing from ntuplemaker FIXME
-    // USE lazycluster tool thing from ntuplemaker FIXME
-    // USE lazycluster tool thing from ntuplemaker FIXME
-    // USE lazycluster tool thing from ntuplemaker FIXME
-    // USE lazycluster tool thing from ntuplemaker FIXME
-    // USE lazycluster tool thing from ntuplemaker FIXME
-    // USE lazycluster tool thing from ntuplemaker FIXME
-    // USE lazycluster tool thing from ntuplemaker FIXME
-    // USE lazycluster tool thing from ntuplemaker FIXME
+    // for (auto pair : seed->hitsAndFractions()) {
+    //     // auto detid = pair.first;
+    //     auto fraction = pair.second;
+    //     std::cout <<  " fraction: " << fraction <<  std::endl;
+    // }
 
     const BasicCluster&  clRef              = *(pat_ele->superCluster()->seed());
-    auto e3x3 = lazyToolnoZS->e3x3(clRef);
+    ele_3x3 = lazyToolnoZS->e3x3(clRef);
     DetId seedid = pat_ele->superCluster()->seed()->hitsAndFractions().at(0).first;
-    std::vector<DetId> detids = lazyToolnoZS->matrixDetId( seedid, -2,2, -2,2 ); // 5x5
-    // float eseed = lazyToolnoZS->recHitEnergy( seedid ); // test
-    // std::cout <<  " eseed: " << eseed <<  std::endl;
-    //
-    // std::vector<DetId> v_id = matrixDetId( topology, getMaximum( cluster, recHits ).first, -2, 2, -2, 2 ); // 5x5
-    // std::vector<DetId> matrixDetId( DetId id, int ixMin, int ixMax, int iyMin, int iyMax );
-
-          // float EcalClusterToolsT<noZS>::recHitEnergy(DetId id, const EcalRecHitCollection *recHits)
-          std::cout <<  " e3x3: " << e3x3 <<  std::endl;
+    std::vector<DetId> detids = lazyToolnoZS->matrixDetId( seedid, -3,3, -3,3 ); // 7x7
                 
-      for( auto id : detids ){
-          if (id.det() == DetId::Ecal && id.subdetId() == EcalBarrel) {
-              std::cout <<  " EBDetId(id).ieta(): " << EBDetId(id).ieta() <<  std::endl;
-          } else if (id.det() == DetId::Ecal && id.subdetId() == EcalEndcap)  {
-              // EEDetId(id).ieta() 
-          } else if (id.det() == DetId::Ecal && id.subdetId() == EcalPreshower)  {
-              // ESDetId(id).ieta() 
-          }
-            auto energy = lazyToolnoZS->matrixEnergy(clRef,id,0,0,0,0);
-            std::cout <<  " energy: " << energy <<  std::endl;
-      }
-
-      // std::cout <<  " rechits->size(): " << rechits->size() <<  std::endl;
-    // for(size_t ihit = 0; ihit<rechits->size(); ++ ihit){
-    // auto hit = (*rechits)[ihit];
-      // // float energy = hit.energy();
-      // // float time = hit.time();
-    // std::cout <<  " hit: " << hit <<  std::endl;
-      // if (hit.detid().det() == DetId::Ecal && hit.detid().subdetId() == EcalBarrel) {
-      //     std::cout << "EB: " << EBDetId(hit.detid()) << ": " << hit.energy() << " GeV, " << hit.time() << " ns" << std::endl;
-      // } else if (hit.detid().det() == DetId::Ecal && hit.detid().subdetId() == EcalEndcap)  {
-      //     std::cout << "EE: " << EEDetId(hit.detid()) << ": " << hit.energy() << " GeV, " << hit.time() << " ns" << std::endl;
-      // } else if (hit.detid().det() == DetId::Ecal && hit.detid().subdetId() == EcalPreshower)  {
-      //     std::cout << "ES: " << ESDetId(hit.detid()) << ": " << hit.energy() << " GeV, " << hit.time() << " ns" << std::endl;
-      // }
-  // }
-
-    ele_pT = ielectron->pt();
-    ele_eta = ielectron->eta();
-    ele_trackMomentumAtVtx_R = ielectron->trackMomentumAtVtx().R();
-
-    ele_full5x5_hcalOverEcal = ielectron->full5x5_hcalOverEcal();
-
-//    setMomentum(myvector, ielectron->p4());
-//    new (electrons[counter]) TLorentzVector(myvector);
-
-    ele_echarge = ielectron->charge(); 
-//    ele_rho = 
-
-    //
-    //ele_he        = ielectron->hcalOverEcal(); //hadronicOverEm() ;
-    //ele_hebc      = ielectron-> hcalOverEcalBc();
+    for( auto id : detids ){
+        auto energy = lazyToolnoZS->matrixEnergy(clRef,id,0,0,0,0);
+        if (energy < 1.e-6) continue;
+        if (id.det() == DetId::Ecal && id.subdetId() == EcalBarrel) {
+            int ieta = EBDetId(id).ieta();
+            int iphi = EBDetId(id).iphi();
+            // std::cout <<  " ieta: " << ieta <<  " iphi: " << iphi <<  " energy: " << energy <<  std::endl;
+            rhs_e.push_back(energy);
+            rhs_iphi.push_back(iphi);
+            rhs_ieta.push_back(ieta);
+        } else if (id.det() == DetId::Ecal && id.subdetId() == EcalEndcap)  {
+        } else if (id.det() == DetId::Ecal && id.subdetId() == EcalPreshower)  {
+        }
+    }
 
     // TrackCluster Matching
     ele_eseedpout = ielectron->eSeedClusterOverPout();
@@ -1705,6 +1665,10 @@ void Ntuplizer::Init()
   ele_eta = 0;
   ele_trackMomentumAtVtx_R = 0;
 
+  rhs_e.clear();
+  rhs_iphi.clear();
+  rhs_ieta.clear();
+  ele_3x3 = 0;
 
   //ele_trig_passed_filter = 0;
   //ele_pass_hltEle27WP75GsfTrackIsoFilter = 0;

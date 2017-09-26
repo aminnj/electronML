@@ -122,11 +122,11 @@ process.reg = tle_ntuple.clone()
 
 
 
-fileNameForSample = 'ntuple'
+# fileNameForSample = 'ntuple'
 
 
 #process.maxEvents = cms.untracked.PSet( input = cms.untracked.int32(100) )
-process.maxEvents = cms.untracked.PSet( input = cms.untracked.int32(100) )
+process.maxEvents = cms.untracked.PSet( input = cms.untracked.int32(5000) )
 
 process.source = cms.Source("PoolSource",
 #    fileNames = cms.untracked.vstring('file:/data_CMS/cms/davignon/Trigger_WithThomas/CMSSW_7_6_0_pre7/src/L1Trigger/L1TNtuples/00BEC5EF-1472-E511-806C-02163E0141EA.root')
@@ -148,7 +148,7 @@ process.MessageLogger.cerr.FwkReport.reportEvery = 1000
 from Configuration.AlCa.GlobalTag_condDBv2 import GlobalTag
 process.GlobalTag = GlobalTag(process.GlobalTag, '80X_mcRun2_asymptotic_2016_TrancheIV_v6', '') # MCRUN2_74_V8
 
-process.TFileService = cms.Service("TFileService", fileName = cms.string(fileNameForSample + '.root') )
+# process.TFileService = cms.Service("TFileService", fileName = cms.string(fileNameForSample + '.root') )
 
 # process.p = cms.Path(process.egmPhotonIDSequence * process.electronMVAValueMapProducer * process.egmPhotonIsolationMiniAOD 
 # * process.reg_signal * process.reg_background

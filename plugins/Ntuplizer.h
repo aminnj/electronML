@@ -245,6 +245,13 @@ class Ntuplizer : public edm::EDAnalyzer {
       float ele_ID1;
       float ele_ID2;
 
+      float ele_3x3;
+
+
+      std::vector<float> rhs_e;
+      std::vector<int> rhs_iphi;
+      std::vector<int> rhs_ieta;
+
       int ele_ID1_pass;
       int ele_ID2_pass;
 
