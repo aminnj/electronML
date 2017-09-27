@@ -248,6 +248,9 @@ class Ntuplizer : public edm::EDAnalyzer {
       float ele_3x3;
 
 
+      int seed_ieta;
+      int seed_iphi;
+      float seed_e;
       std::vector<float> rhs_e;
       std::vector<int> rhs_iphi;
       std::vector<int> rhs_ieta;

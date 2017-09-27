@@ -676,6 +676,9 @@ void Ntuplizer::beginJob()
   _mytree->Branch("ele_pt", &ele_pT);
   _mytree->Branch("ele_eta", &ele_eta);
 
+  _mytree->Branch("seed_ieta", &seed_ieta);
+  _mytree->Branch("seed_iphi", &seed_iphi);
+  _mytree->Branch("seed_e", &seed_e);
   _mytree->Branch("rhs_e", &rhs_e);
   _mytree->Branch("rhs_iphi", &rhs_iphi);
   _mytree->Branch("rhs_ieta", &rhs_ieta);
@@ -1155,7 +1158,17 @@ void Ntuplizer::FillElectron(const edm::Ptr<reco::GsfElectron> ielectron)
     const BasicCluster&  clRef              = *(pat_ele->superCluster()->seed());
     ele_3x3 = lazyToolnoZS->e3x3(clRef);
     DetId seedid = pat_ele->superCluster()->seed()->hitsAndFractions().at(0).first;
-    std::vector<DetId> detids = lazyToolnoZS->matrixDetId( seedid, -3,3, -3,3 ); // 7x7
+    std::vector<DetId> detids = lazyToolnoZS->matrixDetId( seedid, -7,7, -14,14 ); // first pair is for ieta, second is for iphi
+
+    if (seedid.det() == DetId::Ecal && seedid.subdetId() == EcalBarrel) {
+        seed_ieta = EBDetId(seedid).ieta();
+        seed_iphi = EBDetId(seedid).iphi();
+        seed_e = lazyToolnoZS->matrixEnergy(clRef,seedid,0,0,0,0);
+    } else {
+        seed_ieta = 0;
+        seed_iphi = 0;
+        seed_e = 0;
+    }
                 
     for( auto id : detids ){
         auto energy = lazyToolnoZS->matrixEnergy(clRef,id,0,0,0,0);
@@ -1664,6 +1677,10 @@ void Ntuplizer::Init()
   ele_pT = 0;
   ele_eta = 0;
   ele_trackMomentumAtVtx_R = 0;
+
+  seed_ieta = 0;
+  seed_iphi = 0;
+  seed_e = 0;
 
   rhs_e.clear();
   rhs_iphi.clear();
