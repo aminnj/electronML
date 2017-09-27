@@ -784,7 +784,7 @@ const vector<float> &CMS3::rhs_e() {
     }
     rhs_e_isLoaded = true;
   }
-  return rhs_e_;
+  return *rhs_e_;
 }
 const float &CMS3::ele_eelepout() {
   if (not ele_eelepout_isLoaded) {
@@ -1084,7 +1084,7 @@ const vector<int> &CMS3::rhs_iphi() {
     }
     rhs_iphi_isLoaded = true;
   }
-  return rhs_iphi_;
+  return *rhs_iphi_;
 }
 const int &CMS3::ele_sclNclus() {
   if (not ele_sclNclus_isLoaded) {
@@ -1324,7 +1324,7 @@ const vector<int> &CMS3::rhs_ieta() {
     }
     rhs_ieta_isLoaded = true;
   }
-  return rhs_ieta_;
+  return *rhs_ieta_;
 }
 const float &CMS3::scl_eta() {
   if (not scl_eta_isLoaded) {
