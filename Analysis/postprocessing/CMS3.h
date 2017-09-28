@@ -50,7 +50,7 @@ protected:
   int mc_ele_matchedFromCB2_;
   TBranch *mc_ele_matchedFromCB2_branch;
   bool mc_ele_matchedFromCB2_isLoaded;
-  vector<float> rhs_e_;
+  vector<float> *rhs_e_;
   TBranch *rhs_e_branch;
   bool rhs_e_isLoaded;
   float ele_eelepout_;
@@ -125,7 +125,7 @@ protected:
   float ele_oldcircularity_;
   TBranch *ele_oldcircularity_branch;
   bool ele_oldcircularity_isLoaded;
-  vector<int> rhs_iphi_;
+  vector<int> *rhs_iphi_;
   TBranch *rhs_iphi_branch;
   bool rhs_iphi_isLoaded;
   int ele_sclNclus_;
@@ -185,7 +185,7 @@ protected:
   int mc_pho_mother_id_;
   TBranch *mc_pho_mother_id_branch;
   bool mc_pho_mother_id_isLoaded;
-  vector<int> rhs_ieta_;
+  vector<int> *rhs_ieta_;
   TBranch *rhs_ieta_branch;
   bool rhs_ieta_isLoaded;
   float scl_eta_;

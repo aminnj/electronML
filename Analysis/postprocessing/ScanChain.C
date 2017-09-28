@@ -71,24 +71,37 @@ int ScanChain(TChain *ch){
 
         for( unsigned int event = 0; event < tree->GetEntriesFast(); ++event) {
 
+            if (event > 100) break;
 
             cms3.GetEntry(event);
             nEventsTotal++;
 
             CMS3::progress(nEventsTotal, nEventsChain);
 
+            float eta = ele_eta();
+
+            // FOR NOW --
+            // Don't consider stuff outside barrel, or edges of barrel
+            if (fabs(eta) > 1.4) continue;
+
+            std::cout <<  " rhs_e().size(): " << rhs_e().size() <<  " rhs_iphi().size(): " << rhs_iphi().size() <<  " rhs_ieta().size(): " << rhs_ieta().size() <<  std::endl;
+
+            int s_iphi = seed_iphi();
+            int s_ieta = seed_ieta();
             for (int icell = 0; icell < rhs_e().size(); icell++) {
-                std::cout <<  " rhs_e()[icell]: " << rhs_e()[icell] <<  " rhs_iphi()[icell]: " << rhs_iphi()[icell] <<  " rhs_ieta()[icell]: " << rhs_ieta()[icell] <<  std::endl;
+                float energy = rhs_e()[icell];
+                int iphi = rhs_iphi()[icell];
+                int ieta = rhs_ieta()[icell];
+                int rel_iphi = iphi - s_iphi;
+                int rel_ieta = ieta - s_ieta;
+                std::cout <<  " icell: " << icell <<  " energy: " << energy <<  " rel_iphi: " << rel_iphi <<  " rel_ieta: " << rel_ieta <<  std::endl;
             }
 
             
-            break;
-
             bool ismatch = -1;
             int matchtype = -1; // -1 = ???, 0 = light fake, 1 = heavy fake, 2 = prompt lepton
             float mva = ele_ID1();
             float pt = ele_pt();
-            float eta = ele_eta();
             int theircode = mc_ele_matchedFromCB();
             if (theircode == 0) { // bkg unmatch
                 ismatch = false;

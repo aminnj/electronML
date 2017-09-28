@@ -4,7 +4,9 @@ from tqdm import tqdm
 
 
 ch = r.TChain("tree")
-ch.Add("output_12.root")
+# ch.Add("output_12.root")
+for i in range(1,10):
+    ch.Add("/hadoop/cms/store/user/namin/ProjectMetis/DYJetsToLL_M-50_TuneCUETP8M1_13TeV-madgraphMLM-pythia8_RunIISummer16MiniAODv2-PUMoriond17_80X_mcRun2_asymptotic_2016_TrancheIV_v6_ext1-v2_MINIAODSIM_v5/output_{}.root".format(i))
 
 xdata = []
 ydata = []
