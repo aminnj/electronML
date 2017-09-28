@@ -16,11 +16,13 @@ from keras import backend as K
 
 import numpy as np
 from sklearn.model_selection import train_test_split
+from sklearn.metrics import roc_auc_score
+from sklearn.metrics import roc_curve
 
 batch_size = 128
 # batch_size = 1024
 num_classes = 2
-epochs = 1
+epochs = 20
 
 # input image dimensions
 img_rows, img_cols = 9, 23
@@ -34,7 +36,7 @@ y_data = np.load("dump_ydata.npa")
 y_data[:,0][y_data[:,0] != 2] = 0
 y_data[:,0][y_data[:,0] == 2] = 1
 
-x_train, x_test, y_train, y_test, extra_train, extra_test = train_test_split(x_data, y_data[:,0], y_data[:,range(1,y_data.shape[1])], test_size=0.5, random_state=43)
+x_train, x_test, y_train, y_test, extra_train, extra_test = train_test_split(x_data, y_data[:,0], y_data[:,range(1,y_data.shape[1])], test_size=0.7, random_state=43)
 
 
 if K.image_data_format() == 'channels_first':
@@ -48,8 +50,6 @@ else:
 
 x_train = x_train.astype('float32')
 x_test = x_test.astype('float32')
-x_train /= 255
-x_test /= 255
 print('x_train shape:', x_train.shape)
 print(x_train.shape[0], 'train samples')
 print(x_test.shape[0], 'test samples')
@@ -85,5 +85,14 @@ model.fit(x_train, y_train,
           verbose=1,
           validation_data=(x_test, y_test))
 score = model.evaluate(x_test, y_test, verbose=0)
+print("predicting")
+y_pred = model.predict(x_test)
 print('Test loss:', score[0])
 print('Test accuracy:', score[1])
+
+#      y_test, y_pred, pt, mva
+todump = np.c_[ y_test[:,1], y_pred[:,1], extra_test[:,0], extra_test[:,2] ]
+np.array(todump, dtype=np.float32).dump("todump.npa")
+# np.array(y_test, dtype=np.float32).dump("dump_ytest.npa")
+# np.array(y_pred, dtype=np.float32).dump("dump_ypred.npa")
+print("AUC total",roc_auc_score(y_test[:,1],y_pred[:,1]))
