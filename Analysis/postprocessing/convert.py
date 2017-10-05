@@ -4,15 +4,16 @@ from tqdm import tqdm
 
 
 ch = r.TChain("tree")
-# ch.Add("output_12.root")
-for i in range(1,10):
-    ch.Add("/hadoop/cms/store/user/namin/ProjectMetis/DYJetsToLL_M-50_TuneCUETP8M1_13TeV-madgraphMLM-pythia8_RunIISummer16MiniAODv2-PUMoriond17_80X_mcRun2_asymptotic_2016_TrancheIV_v6_ext1-v2_MINIAODSIM_v5/output_{}.root".format(i))
+ch.Add("output_total.root")
+# for i in range(1,10):
+#     ch.Add("/hadoop/cms/store/user/namin/ProjectMetis/DYJetsToLL_M-50_TuneCUETP8M1_13TeV-madgraphMLM-pythia8_RunIISummer16MiniAODv2-PUMoriond17_80X_mcRun2_asymptotic_2016_TrancheIV_v6_ext1-v2_MINIAODSIM_v5/output_{}.root".format(i))
 
 xdata = []
+mvadata = []
 ydata = []
 
-IMAGE_WIDTH = 23 # x - phi
-IMAGE_HEIGHT = 9 # y - eta
+IMAGE_WIDTH = 29 # x - phi
+IMAGE_HEIGHT = 15 # y - eta
 # print rhs_ieta, rhs_iphi
 
 def get_image(iphis,ietas,energies):
@@ -51,7 +52,7 @@ def print_image(image):
 
 
 ievent = 0
-do_extra = False
+do_extra = True
 ch.SetBranchStatus("*",0)
 for var in [
         "ele_eta",
@@ -63,13 +64,38 @@ for var in [
         "rhs_ieta",
         "rhs_iphi",
         "rhs_e",
+        
+        "ele_kfhits",
+        "ele_oldsigmaietaieta",
+        "ele_oldsigmaiphiiphi",
+        "ele_oldcircularity",
+        "ele_oldr9",
+        "ele_scletawidth",
+        "ele_sclphiwidth",
+        "ele_oldhe",
+        "ele_psEoverEraw",
+        "ele_kfchi2",
+        "ele_gsfchi2",
+        "ele_fbrem",
+        "ele_ep",
+        "ele_eelepout",
+        "ele_IoEmIop",
+        "ele_deltaetain",
+        "ele_deltaphiin",
+        "ele_deltaetaseed",
+        "scl_eta",
+        "ele_gsfhits",
+        "ele_expected_inner_hits",
+        "ele_conversionVertexFitProbability",
+
         ]:
+
     ch.SetBranchStatus(var,1)
 for event in tqdm(ch, total=ch.GetEntries()):
     eta = event.ele_eta
 
     ievent += 1
-    # if ievent > 30000: break;
+    # if ievent > 2000000: break;
 
     if abs(eta) > 1.4: continue # FIXME
 
@@ -93,6 +119,8 @@ for event in tqdm(ch, total=ch.GetEntries()):
         print "shouldn't get here with theircode =",theircode
 
     if do_extra:
+        scl_eta_ = event.scl_eta
+
         ele_kfhits_ = event.ele_kfhits
         ele_oldsigmaietaieta_ = event.ele_oldsigmaietaieta
         ele_oldsigmaiphiiphi_ = event.ele_oldsigmaiphiiphi
@@ -111,7 +139,6 @@ for event in tqdm(ch, total=ch.GetEntries()):
         ele_deltaetain_ = min(abs(event.ele_deltaetain), 0.06)
         ele_deltaphiin_ = min(abs(event.ele_deltaphiin), 0.6)
         ele_deltaetaseed_ = min(abs(event.ele_deltaetaseed), 0.2)
-        scl_eta_ = event.scl_eta
         ele_gsfhits_ = event.ele_gsfhits
         ele_expectedMissingInnerHits_ = event.ele_expected_inner_hits
         ele_convVtxFitProbability_ = event.ele_conversionVertexFitProbability
@@ -123,19 +150,46 @@ for event in tqdm(ch, total=ch.GetEntries()):
 
     if seed_e < 1e-6: continue
 
-    rhs_iphi = np.array(event.rhs_iphi)
-    rhs_ieta = np.array(event.rhs_ieta)
-    rhs_e = np.array(event.rhs_e)
+    # rhs_iphi = np.array(event.rhs_iphi)
+    # rhs_ieta = np.array(event.rhs_ieta)
+    # rhs_iphi[rhs_iphi < -180] += 360 # correct edge effects
+    # rhs_iphi[rhs_iphi > 180] -= 360 # correct edge effects
+    # rhs_e = np.array(event.rhs_e)
+    # rhs_iphi -= seed_iphi
+    # rhs_ieta -= seed_ieta
+    # rhs_e /= np.max(rhs_e)
+    # image = get_image(rhs_iphi,rhs_ieta,rhs_e)
+    # xdata.append(image)
 
-    rhs_iphi -= seed_iphi
-    rhs_ieta -= seed_ieta
-    rhs_e /= np.max(rhs_e)
 
-    image = get_image(rhs_iphi,rhs_ieta,rhs_e)
+    mvarow = [
+        ele_oldsigmaietaieta_, # cluster shape
+        ele_oldsigmaiphiiphi_, # cluster shape
+        ele_oldcircularity_, # cluster shape
+        ele_oldr9_, # cluster shape
+        ele_scletawidth_, # cluster shape
+        ele_sclphiwidth_, # cluster shape
+        ele_kfhits_,
+        ele_oldhe_,
+        ele_psEoverEraw_,
+        ele_kfchi2_,
+        ele_chi2_hits_,
+        ele_fbrem_,
+        ele_ep_,
+        ele_eelepout_,
+        ele_IoEmIop_,
+        ele_deltaetain_,
+        ele_deltaphiin_,
+        ele_deltaetaseed_,
+        ele_gsfhits_,
+        ele_expectedMissingInnerHits_,
+        ele_convVtxFitProbability_,
+        ]
 
-    xdata.append(image)
+    mvadata.append(mvarow)
     ydata.append([matchtype, pt, eta, mva])
 
 
-np.array(xdata, dtype=np.float32).dump("dump_xdata.npa")
+np.array(mvadata, dtype=np.float32).dump("dump_mvadata.npa")
+# np.array(xdata, dtype=np.float32).dump("dump_xdata.npa")
 np.array(ydata, dtype=np.float32).dump("dump_ydata.npa")

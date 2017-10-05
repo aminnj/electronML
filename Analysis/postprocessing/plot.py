@@ -5,15 +5,44 @@ import numpy as np
 from sklearn.model_selection import train_test_split
 from sklearn.metrics import roc_auc_score
 from sklearn.metrics import roc_curve
+from sklearn.ensemble import (RandomTreesEmbedding, RandomForestClassifier, GradientBoostingClassifier, AdaBoostClassifier)
 
 import plottery.plottery as ply
 import plottery.utils as plu
+import xgboost as xgb
+import sys
 
 data = np.load("todump.npa")
 y_test = data[:,0]
 y_pred = data[:,1]
 pt_test = data[:,2]
 mva_test = data[:,3]
+weights_test = data[:,4]
+
+print(np.corrcoef(y_pred,mva_test)[0][1])
+# grd = GradientBoostingClassifier(n_estimators=30,verbose=1, max_depth=4,loss="exponential") 
+# print(grd)
+
+x_train = np.c_[y_pred,mva_test]
+x_test = x_train
+# grd.fit(x_train,y_test,sample_weight=weights_test)
+# combined_y_pred = grd.predict_proba(x_test)[:,1]
+# print(combined_y_pred)
+
+print(y_pred)
+# print(np.corrcoef(combined_y_pred,y_pred)[0][1])
+# print(np.corrcoef(combined_y_pred,mva_test)[0][1])
+print(mva_test)
+
+
+
+
+
+
+# sys.exit()
+
+# print(y_pred)
+# print(mva_test)
 
 print(y_test)
 print(y_pred)

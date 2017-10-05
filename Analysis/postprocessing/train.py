@@ -20,17 +20,18 @@ from keras.layers.core import Dense, Dropout, Activation, Flatten
 from keras.layers.convolutional import Convolution2D, MaxPooling2D
 from keras.utils import np_utils
 
-# from sklearn.model_selection import train_test_split
-# from sklearn.metrics import roc_auc_score
-# from sklearn.metrics import roc_curve
+from sklearn.model_selection import train_test_split
+from sklearn.metrics import roc_auc_score
+from sklearn.metrics import roc_curve
 
-batch_size = 512
-# batch_size = 1024
+# batch_size = 512
+batch_size = 1024
 num_classes = 2
 epochs = 1
 
 # input image dimensions
-img_rows, img_cols = 9, 23
+# img_rows, img_cols = 9, 23
+img_rows, img_cols = 15, 29
 # number of convolutional filters to use
 nb_filters = 32
 # size of pooling area for max pooling
@@ -38,10 +39,16 @@ nb_pool = 2
 # convolution kernel size
 nb_conv = 3
 
+do_mvavars = True
+
 # the data, shuffled and split between train and test sets
 # (x_train, y_train), (x_test, y_test) = mnist.load_data()
-x_data = np.load("dump_xdata.npa")
+if do_mvavars:
+    x_data = np.load("dump_mvadata.npa")
+else:
+    x_data = np.load("dump_xdata.npa")
 y_data = np.load("dump_ydata.npa")
+
 
 # print(x_data)
 # print(y_data)
@@ -127,12 +134,22 @@ def train_test_split(*args,**kwargs):
         yield train
         yield test
 
-x_train, x_test, y_train, y_test, extra_train, extra_test, weights_train, weights_test = train_test_split(x_data, truth, extra, weights, test_size=0.7, random_state=43)
+x_train, x_test, y_train, y_test, extra_train, extra_test, weights_train, weights_test = train_test_split(x_data, truth, extra, weights, test_size=0.5, random_state=43)
 
-x_train = x_train.reshape(x_train.shape[0], 1, img_rows, img_cols)
-x_test = x_test.reshape(x_test.shape[0], 1, img_rows, img_cols)
 
 # sys.exit()
+
+
+# print(x_train)
+
+
+if do_mvavars:
+    x_train = x_train.reshape(x_train.shape[0], len(x_train[0]))
+    x_test = x_test.reshape(x_test.shape[0], len(x_test[0]))
+    epochs = 50
+else:
+    x_train = x_train.reshape(x_train.shape[0], 1, img_rows, img_cols)
+    x_test = x_test.reshape(x_test.shape[0], 1, img_rows, img_cols)
 
 x_train = x_train.astype('float32')
 x_test = x_test.astype('float32')
@@ -145,26 +162,50 @@ y_train = np_utils.to_categorical(y_train, num_classes)
 y_test = np_utils.to_categorical(y_test, num_classes)
 
 model = Sequential()
-model.add(Convolution2D(nb_filters, nb_conv, nb_conv,
-                        border_mode='valid',
-                        input_shape=(1, img_rows, img_cols)))
-model.add(Activation('relu'))
-model.add(Convolution2D(nb_filters, nb_conv, nb_conv))
-model.add(Activation('relu'))
-model.add(MaxPooling2D(pool_size=(nb_pool, nb_pool)))
-model.add(Dropout(0.25))
 
-model.add(Flatten())
-model.add(Dense(128))
-model.add(Activation('relu'))
-model.add(Dropout(0.5))
-model.add(Dense(num_classes))
-model.add(Activation('softmax'))
+if do_mvavars:
+    model.add(Dense(48, activation='relu', input_shape=(len(x_train[0]),)))
+
+    model.add(Dense(128))
+    model.add(Activation('relu'))
+    model.add(Dropout(0.4))
+
+    model.add(Dense(64))
+    model.add(Activation('relu'))
+
+    model.add(Dense(32))
+    model.add(Activation('relu'))
+    model.add(Dropout(0.2))
+
+    model.add(Dense(num_classes))
+    model.add(Activation('sigmoid'))
+
+else:
+    model.add(Convolution2D(nb_filters, nb_conv, nb_conv,
+                            border_mode='valid',
+                            input_shape=(1, img_rows, img_cols)))
+
+
+    model.add(Activation('relu'))
+    model.add(Convolution2D(nb_filters, nb_conv, nb_conv))
+    model.add(Activation('relu'))
+    model.add(MaxPooling2D(pool_size=(nb_pool, nb_pool)))
+    model.add(Dropout(0.25))
+    model.add(Flatten())
+
+    model.add(Dense(128))
+    model.add(Activation('relu'))
+    model.add(Dropout(0.5))
+    model.add(Dense(num_classes))
+    model.add(Activation('softmax'))
 
 
 model.compile(loss='categorical_crossentropy',
               optimizer='adadelta',
               metrics=['accuracy'])
+
+# from keras.utils import plot_model
+# plot_model(model, to_file="model.pdf")
 
 model.fit(x_train, y_train,
           batch_size=batch_size,
@@ -178,8 +219,8 @@ y_pred = model.predict(x_test)
 print('Test loss:', score[0])
 print('Test accuracy:', score[1])
 
-#      y_test, y_pred, pt, mva
-todump = np.c_[ y_test[:,1], y_pred[:,1], extra_test[:,0], extra_test[:,2] ]
+# test:         y_test, y_pred, pt, mva, weights
+todump = np.c_[ y_test[:,1], y_pred[:,1], extra_test[:,0], extra_test[:,2], weights_test ]
 np.array(todump, dtype=np.float32).dump("todump.npa")
 # np.array(y_test, dtype=np.float32).dump("dump_ytest.npa")
 # np.array(y_pred, dtype=np.float32).dump("dump_ypred.npa")
