@@ -29,19 +29,16 @@ from keras.layers.core import Dense, Dropout, Activation, Flatten
 from keras.layers.convolutional import Convolution2D, MaxPooling2D
 from keras.utils import np_utils
 
-# https://keras.io/applications/
-from keras.applications.resnet50 import ResNet50
-from keras.preprocessing import image
-from keras.applications.resnet50 import preprocess_input, decode_predictions
+import xgboost as xgb
 
 import utils
 
-# from sklearn.metrics import roc_auc_score
+from sklearn.metrics import roc_auc_score
 
 batch_size = 512
 num_classes = 2
 # epochs = 15
-epochs = 1
+epochs = 10
 img_rows, img_cols = 15, 29
 nb_filters = 32
 nb_pool = 2
@@ -50,11 +47,11 @@ nb_conv = 5
 # if load_from is None, we re-train keras/xgb and then if save_to is not None, we save the models
 save_to = "model.h5"
 load_from = "model.h5"
-# load_from = None
+load_from = None
 
-# xmva_data, x_data, y_data = utils.load_data(inputdir="outputs/",prefix="flip_",nfiles=30)
+xmva_data, x_data, y_data = utils.load_data(inputdir="outputs/",prefix="flip_",nfiles=35)
 # xmva_data, x_data, y_data = utils.load_data(inputdir="outputs/",prefix="flip_",nevents=10000)
-xmva_data, x_data, y_data = utils.load_data(inputdir="outputs/",prefix="flip_",nevents=100000)
+# xmva_data, x_data, y_data = utils.load_data(inputdir="outputs/",prefix="flip_",nevents=100000)
 print("Loaded data")
 
 truth, extra = y_data[:,0], y_data[:,range(1,y_data.shape[1])]
@@ -78,14 +75,13 @@ print("Did splitting")
 
 xshape_train = xmva_train[:,range(6)]
 xshape_test = xmva_test[:,range(6)]
-import xgboost as xgb
 print(xshape_train)
 print(y_train)
 dtrain = xgb.DMatrix( xshape_train, label=y_train, weight=np.abs(weights_train))
 dtest = xgb.DMatrix( xshape_test, label=y_test, weight=np.abs(weights_test))
 ihalf = len(xshape_test)
 evallist  = [(dtrain,'train'), (dtest,'eval')]
-num_round = 20
+num_round = 300
 param = {}
 param['objective'] = 'binary:logistic'
 param['max_depth'] = 3
@@ -103,6 +99,7 @@ else:
 
     if save_to:
         bst.save_model(save_to.replace("h5","xgb"))
+print("Predicting with xgb")
 xgb_y_pred = bst.predict(dtest)
 
 
@@ -135,6 +132,7 @@ y_train = np_utils.to_categorical(y_train, num_classes)
 y_test = np_utils.to_categorical(y_test, num_classes)
 
 if load_from:
+    print("Loading CNN model")
     model = load_model(load_from)
 else:
 
@@ -168,16 +166,18 @@ else:
     if save_to:
         model.save(save_to)
 
-score = model.evaluate(x_test, y_test, verbose=0)
 print("Predicting")
 y_pred = model.predict(x_test)
-print('Test loss:', score[0])
-print('Test accuracy:', score[1])
+# score = model.evaluate(x_test, y_test, verbose=0)
+# print('Test loss:', score[0])
+# print('Test accuracy:', score[1])
 
 # test:         y_test, y_pred, pt, mva, weights sigmaietaieta
 print("Dumping extra data")
 todump = np.c_[ y_test[:,1], y_pred[:,1], extra_test[:,0], extra_test[:,2], weights_test, sieie_test, xgb_y_pred ]
 np.array(todump, dtype=np.float32).dump("todump.npa")
-# np.array(y_test, dtype=np.float32).dump("dump_ytest.npa")
-# np.array(y_pred, dtype=np.float32).dump("dump_ypred.npa")
-# print("AUC total",roc_auc_score(y_test[:,1],y_pred[:,1]))
+
+print("AUC total (CNN):",roc_auc_score(y_test[:,1],y_pred[:,1]))
+print("AUC total (XGB):",roc_auc_score(y_test[:,1],xgb_y_pred))
+print("AUC total (SIEIE):",roc_auc_score(y_test[:,1],1.-sieie_test))
+print("AUC total (CMS):",roc_auc_score(y_test[:,1],extra_test[:,2]))
