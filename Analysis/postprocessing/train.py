@@ -47,10 +47,10 @@ nb_conv = 5
 # if load_from is None, we re-train keras/xgb and then if save_to is not None, we save the models
 save_to = "model.h5"
 load_from = "model.h5"
-load_from = None
+# load_from = None
 
-xmva_data, x_data, y_data = utils.load_data(inputdir="outputs/",prefix="flip_",nfiles=35)
-# xmva_data, x_data, y_data = utils.load_data(inputdir="outputs/",prefix="flip_",nevents=10000)
+# xmva_data, x_data, y_data = utils.load_data(inputdir="outputs/",prefix="flip_",nfiles=35)
+xmva_data, x_data, y_data = utils.load_data(inputdir="outputs/",prefix="flip_",nevents=10000)
 # xmva_data, x_data, y_data = utils.load_data(inputdir="outputs/",prefix="flip_",nevents=100000)
 print("Loaded data")
 

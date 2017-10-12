@@ -49,6 +49,7 @@ use_xgb_as_disc = True
 print(y_test)
 print(y_pred)
 print("AUC total",roc_auc_score(y_test,y_pred))
+print("AUC total",roc_auc_score(y_test,xgb_test))
 
 def culled_indices(thresholds, precision=0.0002):
     """
@@ -69,19 +70,23 @@ def culled_indices(thresholds, precision=0.0002):
 
 vals = []
 legend_labels = []
-for ptlow,pthigh,ptlabel in [
-        (0., 10., "CMS: 0 < p_{T} < 10"),
-        (10., 30., "CMS: 10 < p_{T} < 30"),
-        # (21., 22., "CMS: 21 < p_{T} < 22"),
-        (30., 80., "CMS: 30 < p_{T} < 80"),
-        (80., 1000., "CMS: 80 < p_{T} < 1000"),
-        ]:
+tot = 0.
+bininfo = [
+        (0., 10., "%s: 0 < p_{T} < 10"),
+        (10., 30., "%s: 10 < p_{T} < 30"),
+        (30., 80., "%s: 30 < p_{T} < 80"),
+        (80., 1000., "%s: 80 < p_{T} < 1e3"),
+        ]
+for ptlow,pthigh,ptlabel in bininfo:
     y_test_sub = y_test[(pt_test > ptlow) & (pt_test < pthigh)]
     if use_sieie_as_disc:
+        ptlabel = ptlabel % "#sigma_{i#etai#eta}"
         y_pred_sub = 1.0-sieie_test[(pt_test > ptlow) & (pt_test < pthigh)]
     elif use_xgb_as_disc:
+        ptlabel = ptlabel % "XGB"
         y_pred_sub = xgb_test[(pt_test > ptlow) & (pt_test < pthigh)]
     else:
+        ptlabel = ptlabel % "CMS"
         y_pred_sub = mva_test[(pt_test > ptlow) & (pt_test < pthigh)]
     fpr, tpr, thresholds = roc_curve(y_test_sub, y_pred_sub) #, pos_label=2)
     # if ptlow == 10.:
@@ -89,7 +94,6 @@ for ptlow,pthigh,ptlabel in [
     #         if 0.985 < thresh < 0.990:
     #             print(bkgeff,sigeff,thresh)
     auc = np.trapz(tpr,fpr)
-    print(auc)
     to_keep = culled_indices(thresholds)
     fpr = fpr[to_keep]
     tpr = tpr[to_keep]
@@ -97,13 +101,8 @@ for ptlow,pthigh,ptlabel in [
     ptlabel = "{} [{:.3f}]".format(ptlabel,auc)
     legend_labels.append(ptlabel)
 
-for ptlow,pthigh,ptlabel in [
-        (0., 10., "Me: 0 < p_{T} < 10"),
-        (10., 30., "Me: 10 < p_{T} < 30"),
-        # (21., 22., "Me: 21 < p_{T} < 22"),
-        (30., 80., "Me: 30 < p_{T} < 80"),
-        (80., 1000., "Me: 80 < p_{T} < 1000"),
-        ]:
+for ptlow,pthigh,ptlabel in bininfo:
+    ptlabel = ptlabel % "CNN"
     y_test_sub = y_test[(pt_test > ptlow) & (pt_test < pthigh)]
     y_pred_sub = y_pred[(pt_test > ptlow) & (pt_test < pthigh)]
     fpr, tpr, thresholds = roc_curve(y_test_sub, y_pred_sub)
@@ -114,10 +113,14 @@ for ptlow,pthigh,ptlabel in [
     vals.append( (fpr,tpr) )
     ptlabel = "{} [{:.3f}]".format(ptlabel,auc)
     legend_labels.append(ptlabel)
+
+# colors = []
+# colors.extend(plu.interpolate_colors_rgb( (1.,0.,0.),(0.,0.,1.), len(legend_labels)/2 ))
+# colors.extend(plu.interpolate_colors_rgb( (1.,0.,0.),(0.,0.,1.), len(legend_labels)/2 ))
 colors = []
-colors.extend(plu.interpolate_colors_rgb( (1.,0.,0.),(0.,0.,1.), 4 ))
-colors.extend(plu.interpolate_colors_rgb( (1.,0.,0.),(0.,0.,1.), 4 ))
-draw_styles = [0]*4 + [2]*4
+colors.extend(plu.get_brightdefault_colors()[:len(legend_labels)/2])
+colors.extend(plu.get_brightdefault_colors()[:len(legend_labels)/2])
+draw_styles = [0]*(len(legend_labels)/2) + [2]*(len(legend_labels)/2)
 
 ply.plot_graph(
         vals,
@@ -126,6 +129,8 @@ ply.plot_graph(
         draw_styles = draw_styles,
         options = {
             "legend_alignment": "bottom right",
+            "legend_scalex": 1.45,
+            "legend_scaley": 1.5,
             "xaxis_label": "bkg. eff.",
             "yaxis_label": "sig. eff.",
             "title": "DY: prompt vs unmatched e & b/c#rightarrow e",
@@ -134,7 +139,7 @@ ply.plot_graph(
             # "xaxis_range": [0.005,0.8],
             # "yaxis_range": [0.7,1.0],
             "xaxis_range": [0.005,0.8],
-            "yaxis_range": [0.2,1.0],
+            "yaxis_range": [0.5,1.0],
             "output_name": "plots/roc.pdf",
             "output_ic": True,
         }
