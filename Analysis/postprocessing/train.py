@@ -10,50 +10,52 @@ from __future__ import print_function
 import numpy as np
 np.random.seed(1337)  # for reproducibility
 import sys
+import os
+import socket
+
+os.environ["TF_CPP_MIN_LOG_LEVEL"] = "2"
 
 from keras import backend as K
-K.set_image_dim_ordering('th')
+if "ucsd" in socket.gethostname():
+    use_tf = False
+    K.set_image_dim_ordering('th')
+else:
+    use_tf = True
 
 from keras.datasets import mnist
-from keras.models import Sequential
+# https://keras.io/getting-started/faq/#how-can-i-save-a-keras-model
+from keras.models import Sequential, load_model 
 from keras.layers.core import Dense, Dropout, Activation, Flatten
 from keras.layers.convolutional import Convolution2D, MaxPooling2D
 from keras.utils import np_utils
 
-from sklearn.model_selection import train_test_split
-from sklearn.metrics import roc_auc_score
-from sklearn.metrics import roc_curve
+# https://keras.io/applications/
+from keras.applications.resnet50 import ResNet50
+from keras.preprocessing import image
+from keras.applications.resnet50 import preprocess_input, decode_predictions
 
-# batch_size = 512
-batch_size = 1024
+import utils
+
+# from sklearn.metrics import roc_auc_score
+
+batch_size = 512
 num_classes = 2
+# epochs = 15
 epochs = 1
-
-# input image dimensions
-# img_rows, img_cols = 9, 23
 img_rows, img_cols = 15, 29
-# number of convolutional filters to use
 nb_filters = 32
-# size of pooling area for max pooling
 nb_pool = 2
-# convolution kernel size
-nb_conv = 3
+nb_conv = 5
+# if load_from is not None, we always load from model files for keras and xgb
+# if load_from is None, we re-train keras/xgb and then if save_to is not None, we save the models
+save_to = "model.h5"
+load_from = "model.h5"
+# load_from = None
 
-do_mvavars = True
-
-# the data, shuffled and split between train and test sets
-# (x_train, y_train), (x_test, y_test) = mnist.load_data()
-if do_mvavars:
-    x_data = np.load("dump_mvadata.npa")
-else:
-    x_data = np.load("dump_xdata.npa")
-y_data = np.load("dump_ydata.npa")
-
-
-# print(x_data)
-# print(y_data)
-
-# print(np.sum(np.sum(x_data,axis=2),axis=1))
+# xmva_data, x_data, y_data = utils.load_data(inputdir="outputs/",prefix="flip_",nfiles=30)
+# xmva_data, x_data, y_data = utils.load_data(inputdir="outputs/",prefix="flip_",nevents=10000)
+xmva_data, x_data, y_data = utils.load_data(inputdir="outputs/",prefix="flip_",nevents=100000)
+print("Loaded data")
 
 truth, extra = y_data[:,0], y_data[:,range(1,y_data.shape[1])]
 pt = extra[:,0]
@@ -64,164 +66,118 @@ mva = extra[:,2]
 truth[truth != 2] = 0
 truth[truth == 2] = 1
 
-def get_ptweight_info(pt,eta,truth,do_print=False):
-    """
-    takes 1d array of pTs, etas, 1d array of truth info (signal=1, bkg=0)
-    returns 3 arrays of bin edges for pt reweighting, scale factors (= signal/background)
-    """
-    binedges = np.array(range(0,80,5)+range(80,200,20)+range(200,300,50)+range(300,500,100)+range(500,1000+1,500))
 
-    etarange1 = (np.abs(eta) > 0.)    & (np.abs(eta) < 0.8)
-    etarange2 = (np.abs(eta) > 0.8)   & (np.abs(eta) < 1.479)
-    etarange3 = (np.abs(eta) > 1.479) & (np.abs(eta) < 2.5)
-
-    contents_sig = np.histogram2d(pt[(truth == 1)], np.abs(eta[(truth == 1)]), bins=[binedges, np.array([0.,0.8,1.479,2.5])], normed=True)[0]
-    contents_bg = np.histogram2d(pt[(truth == 0)], np.abs(eta[(truth == 0)]), bins=[binedges, np.array([0.,0.8,1.479,2.5])], normed=True)[0]
-    etasfs = 1.0*contents_sig/contents_bg
-
-    sf1 = etasfs[:,0]
-    sf2 = etasfs[:,1]
-    sf3 = etasfs[:,2]
-
-    if do_print:
-        for triplet in zip(binedges[:-1],sf1,sf2,sf3):
-            print("{}\t{:.4f}\t{:.4f}\t{:.4f}".format(*triplet))
-
-    return binedges, (sf1,sf2,sf3)
-
-def get_ptweight(pt,eta,truth,binedges,sfs):
-    """
-    takes 1d array of pTs, etas, 1d array of truth info (signal=1, bkg=0),
-    1d array of binedges, scale factors, and errors (from get_ptweight_info)
-    returns array of weights (1 for signal)
-    """
-    sfs1, sfs2, sfs3 = sfs
-
-    etarange1 = (np.abs(eta) > 0.)    & (np.abs(eta) < 0.8)
-    etarange2 = (np.abs(eta) > 0.8)   & (np.abs(eta) < 1.479)
-    etarange3 = (np.abs(eta) > 1.479) & (np.abs(eta) < 2.5)
-
-    weights = np.ones(len(pt))
-    for edge,sf1,sf2,sf3 in zip(binedges,sfs1,sfs2,sfs3):
-        # print edge, sf, err
-        which = (pt>=edge) & (truth==0) & etarange1
-        weights[which] = sf1
-        which = (pt>=edge) & (truth==0) & etarange2
-        weights[which] = sf2
-        which = (pt>=edge) & (truth==0) & etarange3
-        weights[which] = sf3
-    return weights
+binedges, sfs = utils.get_ptweight_info(pt,eta,truth,do_print=False)
+weights = utils.get_ptweight(pt,eta,truth,binedges,sfs)
+print("Got the pt/eta weights")
 
 
-binedges, sfs = get_ptweight_info(pt,eta,truth,do_print=True)
-weights = get_ptweight(pt,eta,truth,binedges,sfs)
-print(weights)
-print("got the pt/eta weights")
-# print weights, weighterrs
+x_train, x_test, xmva_train, xmva_test, y_train, y_test, extra_train, extra_test, weights_train, weights_test = utils.train_test_split(x_data, xmva_data, truth, extra, weights, test_size=0.3, random_state=43)
+sieie_test = xmva_test[:,0]
+print("Did splitting")
 
-print(len(truth))
-print(sum(truth==1))
-print(sum(truth==0))
+xshape_train = xmva_train[:,range(6)]
+xshape_test = xmva_test[:,range(6)]
+import xgboost as xgb
+print(xshape_train)
+print(y_train)
+dtrain = xgb.DMatrix( xshape_train, label=y_train, weight=np.abs(weights_train))
+dtest = xgb.DMatrix( xshape_test, label=y_test, weight=np.abs(weights_test))
+ihalf = len(xshape_test)
+evallist  = [(dtrain,'train'), (dtest,'eval')]
+num_round = 20
+param = {}
+param['objective'] = 'binary:logistic'
+param['max_depth'] = 3
+param['silent'] = 1
+param['nthread'] = 12
+param['eval_metric'] = "auc"
+if load_from:
+    bst = xgb.Booster(model_file=load_from.replace("h5","xgb"))
+else:
+    bst = xgb.train( param.items(), dtrain, num_round, evallist, early_stopping_rounds=50 )
+    featurenames = ["ele_oldsigmaietaieta_", "ele_oldsigmaiphiiphi_", "ele_oldcircularity_", "ele_oldr9_", "ele_scletawidth_", "ele_sclphiwidth_"]
+    print("XGB feature rankings:")
+    for rank,name in sorted(zip(map(bst.get_fscore().get, bst.feature_names),featurenames), reverse=True):
+        print("  {:4s} {:15s}".format(str(rank),str(name)))
+
+    if save_to:
+        bst.save_model(save_to.replace("h5","xgb"))
+xgb_y_pred = bst.predict(dtest)
 
 
-def train_test_split(*args,**kwargs):
-    test_size = kwargs.get("test_size", 0.5)
-    for arg in args:
-        n_total = arg.shape[0]
-        n_train = int(test_size*n_total)
-        train = arg[:n_train]
-        test = arg[n_train-n_total:]
-        yield train
-        yield test
+print("Counts:")
+print("  train ntot",len(x_train))
+print("  train nsig",(y_train==1).sum())
+print("  train nbkg",(y_train==0).sum())
+print("  test ntot",len(x_test))
+print("  test nsig",(y_test==1).sum())
+print("  test nbkg",(y_test==0).sum())
 
-x_train, x_test, y_train, y_test, extra_train, extra_test, weights_train, weights_test = train_test_split(x_data, truth, extra, weights, test_size=0.5, random_state=43)
+xmva_train = xmva_train.reshape(xmva_train.shape[0], len(xmva_train[0]))
+xmva_test = xmva_test.reshape(xmva_test.shape[0], len(xmva_test[0]))
 
-
-# sys.exit()
-
-
-# print(x_train)
-
-
-if do_mvavars:
-    x_train = x_train.reshape(x_train.shape[0], len(x_train[0]))
-    x_test = x_test.reshape(x_test.shape[0], len(x_test[0]))
-    epochs = 50
+if use_tf:
+    x_train = x_train.reshape(x_train.shape[0], img_rows, img_cols, 1)
+    x_test = x_test.reshape(x_test.shape[0], img_rows, img_cols, 1)
+    input_shape = (img_rows, img_cols, 1)
 else:
     x_train = x_train.reshape(x_train.shape[0], 1, img_rows, img_cols)
     x_test = x_test.reshape(x_test.shape[0], 1, img_rows, img_cols)
+    input_shape = (1, img_rows, img_cols)
+
 
 x_train = x_train.astype('float32')
 x_test = x_test.astype('float32')
-print('x_train shape:', x_train.shape)
-print(x_train.shape[0], 'train samples')
-print(x_test.shape[0], 'test samples')
 
 # convert class vectors to binary class matrices
 y_train = np_utils.to_categorical(y_train, num_classes)
 y_test = np_utils.to_categorical(y_test, num_classes)
 
-model = Sequential()
-
-if do_mvavars:
-    model.add(Dense(48, activation='relu', input_shape=(len(x_train[0]),)))
-
-    model.add(Dense(128))
-    model.add(Activation('relu'))
-    model.add(Dropout(0.4))
-
-    model.add(Dense(64))
-    model.add(Activation('relu'))
-
-    model.add(Dense(32))
-    model.add(Activation('relu'))
-    model.add(Dropout(0.2))
-
-    model.add(Dense(num_classes))
-    model.add(Activation('sigmoid'))
-
+if load_from:
+    model = load_model(load_from)
 else:
+
+    model = Sequential()
     model.add(Convolution2D(nb_filters, nb_conv, nb_conv,
                             border_mode='valid',
-                            input_shape=(1, img_rows, img_cols)))
-
-
+                            input_shape = input_shape))
     model.add(Activation('relu'))
-    model.add(Convolution2D(nb_filters, nb_conv, nb_conv))
+    model.add(Convolution2D(nb_filters*2, nb_conv, nb_conv))
     model.add(Activation('relu'))
     model.add(MaxPooling2D(pool_size=(nb_pool, nb_pool)))
-    model.add(Dropout(0.25))
+    model.add(Dropout(0.2))
     model.add(Flatten())
-
-    model.add(Dense(128))
+    model.add(Dense(1024))
     model.add(Activation('relu'))
-    model.add(Dropout(0.5))
+    model.add(Dense(256))
+    model.add(Activation('relu'))
+    model.add(Dropout(0.3))
     model.add(Dense(num_classes))
     model.add(Activation('softmax'))
+    model.compile(loss='categorical_crossentropy',
+                  optimizer='adadelta',
+                  metrics=['accuracy'])
+    model.fit(x_train, y_train,
+              batch_size=batch_size,
+              nb_epoch=epochs,
+              verbose=1,
+              sample_weight=weights_train,
+              validation_data=(x_test, y_test, weights_test))
 
+    if save_to:
+        model.save(save_to)
 
-model.compile(loss='categorical_crossentropy',
-              optimizer='adadelta',
-              metrics=['accuracy'])
-
-# from keras.utils import plot_model
-# plot_model(model, to_file="model.pdf")
-
-model.fit(x_train, y_train,
-          batch_size=batch_size,
-          nb_epoch=epochs,
-          verbose=1,
-          sample_weight=weights_train,
-          validation_data=(x_test, y_test, weights_test))
 score = model.evaluate(x_test, y_test, verbose=0)
-print("predicting")
+print("Predicting")
 y_pred = model.predict(x_test)
 print('Test loss:', score[0])
 print('Test accuracy:', score[1])
 
-# test:         y_test, y_pred, pt, mva, weights
-todump = np.c_[ y_test[:,1], y_pred[:,1], extra_test[:,0], extra_test[:,2], weights_test ]
+# test:         y_test, y_pred, pt, mva, weights sigmaietaieta
+print("Dumping extra data")
+todump = np.c_[ y_test[:,1], y_pred[:,1], extra_test[:,0], extra_test[:,2], weights_test, sieie_test, xgb_y_pred ]
 np.array(todump, dtype=np.float32).dump("todump.npa")
 # np.array(y_test, dtype=np.float32).dump("dump_ytest.npa")
 # np.array(y_pred, dtype=np.float32).dump("dump_ypred.npa")
-print("AUC total",roc_auc_score(y_test[:,1],y_pred[:,1]))
+# print("AUC total",roc_auc_score(y_test[:,1],y_pred[:,1]))

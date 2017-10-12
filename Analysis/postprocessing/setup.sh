@@ -4,3 +4,4 @@ export PATH=/usr/local/cuda-8.0/bin${PATH:+:${PATH}}
 export LD_LIBRARY_PATH=/usr/local/cuda-8.0/lib64${LD_LIBRARY_PATH:+:${LD_LIBRARY_PATH}}
 export THEANO_FLAGS='mode=FAST_RUN,device=gpu0,floatX=float32' 
 # python mnist_cnn.py
+export TF_CPP_MIN_LOG_LEVEL=2
