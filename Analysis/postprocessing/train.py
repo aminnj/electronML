@@ -37,20 +37,21 @@ from sklearn.metrics import roc_auc_score
 
 batch_size = 512
 num_classes = 2
-# epochs = 15
-epochs = 10
+epochs = 15
+# epochs = 10
 img_rows, img_cols = 15, 29
 nb_filters = 32
 nb_pool = 2
 nb_conv = 5
+do_xgb = False
 # if load_from is not None, we always load from model files for keras and xgb
 # if load_from is None, we re-train keras/xgb and then if save_to is not None, we save the models
 save_to = "model.h5"
 load_from = "model.h5"
-# load_from = None
+load_from = None
 
-# xmva_data, x_data, y_data = utils.load_data(inputdir="outputs/",prefix="flip_",nfiles=35)
-xmva_data, x_data, y_data = utils.load_data(inputdir="outputs/",prefix="flip_",nevents=10000)
+xmva_data, x_data, y_data = utils.load_data(inputdir="outputs/",prefix="flip_",nfiles=50)
+# xmva_data, x_data, y_data = utils.load_data(inputdir="outputs/",prefix="flip_",nevents=10000)
 # xmva_data, x_data, y_data = utils.load_data(inputdir="outputs/",prefix="flip_",nevents=100000)
 print("Loaded data")
 
@@ -73,34 +74,33 @@ x_train, x_test, xmva_train, xmva_test, y_train, y_test, extra_train, extra_test
 sieie_test = xmva_test[:,0]
 print("Did splitting")
 
-xshape_train = xmva_train[:,range(6)]
-xshape_test = xmva_test[:,range(6)]
-print(xshape_train)
-print(y_train)
-dtrain = xgb.DMatrix( xshape_train, label=y_train, weight=np.abs(weights_train))
-dtest = xgb.DMatrix( xshape_test, label=y_test, weight=np.abs(weights_test))
-ihalf = len(xshape_test)
-evallist  = [(dtrain,'train'), (dtest,'eval')]
-num_round = 300
-param = {}
-param['objective'] = 'binary:logistic'
-param['max_depth'] = 3
-param['silent'] = 1
-param['nthread'] = 12
-param['eval_metric'] = "auc"
-if load_from:
-    bst = xgb.Booster(model_file=load_from.replace("h5","xgb"))
-else:
-    bst = xgb.train( param.items(), dtrain, num_round, evallist, early_stopping_rounds=50 )
-    featurenames = ["ele_oldsigmaietaieta_", "ele_oldsigmaiphiiphi_", "ele_oldcircularity_", "ele_oldr9_", "ele_scletawidth_", "ele_sclphiwidth_"]
-    print("XGB feature rankings:")
-    for rank,name in sorted(zip(map(bst.get_fscore().get, bst.feature_names),featurenames), reverse=True):
-        print("  {:4s} {:15s}".format(str(rank),str(name)))
+if do_xgb:
+    xshape_train = xmva_train[:,range(6)]
+    xshape_test = xmva_test[:,range(6)]
+    dtrain = xgb.DMatrix( xshape_train, label=y_train, weight=np.abs(weights_train))
+    dtest = xgb.DMatrix( xshape_test, label=y_test, weight=np.abs(weights_test))
+    ihalf = len(xshape_test)
+    evallist  = [(dtrain,'train'), (dtest,'eval')]
+    num_round = 1000
+    param = {}
+    param['objective'] = 'binary:logistic'
+    param['max_depth'] = 3
+    param['silent'] = 1
+    param['nthread'] = 12
+    param['eval_metric'] = "auc"
+    if load_from:
+        bst = xgb.Booster(model_file=load_from.replace("h5","xgb"))
+    else:
+        bst = xgb.train( param.items(), dtrain, num_round, evallist, early_stopping_rounds=50 )
+        featurenames = ["ele_oldsigmaietaieta_", "ele_oldsigmaiphiiphi_", "ele_oldcircularity_", "ele_oldr9_", "ele_scletawidth_", "ele_sclphiwidth_"]
+        print("XGB feature rankings:")
+        for rank,name in sorted(zip(map(bst.get_fscore().get, bst.feature_names),featurenames), reverse=True):
+            print("  {:4s} {:15s}".format(str(rank),str(name)))
 
-    if save_to:
-        bst.save_model(save_to.replace("h5","xgb"))
-print("Predicting with xgb")
-xgb_y_pred = bst.predict(dtest)
+        if save_to:
+            bst.save_model(save_to.replace("h5","xgb"))
+    print("Predicting with xgb")
+    xgb_y_pred = bst.predict(dtest)
 
 
 print("Counts:")
@@ -138,10 +138,10 @@ else:
 
     model = Sequential()
     model.add(Convolution2D(nb_filters, nb_conv, nb_conv,
-                            border_mode='valid',
+                            border_mode='same',
                             input_shape = input_shape))
     model.add(Activation('relu'))
-    model.add(Convolution2D(nb_filters*2, nb_conv, nb_conv))
+    model.add(Convolution2D(nb_filters*2, nb_conv, nb_conv, border_mode='same'))
     model.add(Activation('relu'))
     model.add(MaxPooling2D(pool_size=(nb_pool, nb_pool)))
     model.add(Dropout(0.2))
@@ -172,12 +172,13 @@ y_pred = model.predict(x_test)
 # print('Test loss:', score[0])
 # print('Test accuracy:', score[1])
 
+
+print("AUC total (CNN):",roc_auc_score(y_test[:,1],y_pred[:,1]))
+print("AUC total (SIEIE):",roc_auc_score(y_test[:,1],1.-sieie_test))
+print("AUC total (CMS):",roc_auc_score(y_test[:,1],extra_test[:,2]))
+print("AUC total (XGB):",roc_auc_score(y_test[:,1],xgb_y_pred))
+
 # test:         y_test, y_pred, pt, mva, weights sigmaietaieta
 print("Dumping extra data")
 todump = np.c_[ y_test[:,1], y_pred[:,1], extra_test[:,0], extra_test[:,2], weights_test, sieie_test, xgb_y_pred ]
 np.array(todump, dtype=np.float32).dump("todump.npa")
-
-print("AUC total (CNN):",roc_auc_score(y_test[:,1],y_pred[:,1]))
-print("AUC total (XGB):",roc_auc_score(y_test[:,1],xgb_y_pred))
-print("AUC total (SIEIE):",roc_auc_score(y_test[:,1],1.-sieie_test))
-print("AUC total (CMS):",roc_auc_score(y_test[:,1],extra_test[:,2]))
