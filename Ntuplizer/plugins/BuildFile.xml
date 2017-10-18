@@ -15,4 +15,5 @@
 <use   name="TrackingTools/IPTools"/>
 <use   name="RecoEgamma/EgammaTools"/>
 <use   name="PhysicsTools/UtilAlgos"/>
+<use   name="RecoEgamma/EgammaElectronAlgos"/>
 <flags   EDM_PLUGIN="1"/>

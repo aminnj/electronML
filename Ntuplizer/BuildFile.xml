@@ -9,6 +9,7 @@
 <use   name="FWCore/ServiceRegistry"/>
 <use   name="TrackingTools/IPTools"/>
 <use   name="RecoEgamma/EgammaTools"/>
+<use   name="RecoEgamma/EgammaElectronAlgos"/>
 <export>
   <use name="FWCore/Framework"/>
   <use name="FWCore/ParameterSet"/>

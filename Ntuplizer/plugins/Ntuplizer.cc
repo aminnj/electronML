@@ -240,6 +240,9 @@ isMC_ (iConfig.getParameter<bool>("isMC")),
 ID1_use_userFloat_ (iConfig.getParameter<bool>("ID1_use_userFloat"))
 {
 
+    ElectronHcalHelper::Configuration hcalCfg;
+    hcalHelper.reset(new ElectronHcalHelper(hcalCfg));
+
   std::string inFileType_s = iConfig.getUntrackedParameter<std::string>("inputFileFormat");
 
   if(inFileType_s == "AOD") {
@@ -684,6 +687,13 @@ void Ntuplizer::beginJob()
   _mytree->Branch("rhs_ieta", &rhs_ieta);
   _mytree->Branch("ele_3x3", &ele_3x3);
 
+  _mytree->Branch("hit_types", &hit_types);
+
+  _mytree->Branch("positionAtVtx", &positionAtVtx);
+  _mytree->Branch("positionAtCalo", &positionAtCalo);
+  _mytree->Branch("momentumAtVtx", &momentumAtVtx);
+  _mytree->Branch("momentumAtCalo", &momentumAtCalo);
+  _mytree->Branch("momentumOut", &momentumOut);
 
  // _mytree->Branch("mc_gen_ele_p4", &_mc_gen_ele_p4);
   _mytree->Branch("mc_gen_pt", &mc_gen_pT);
@@ -1173,6 +1183,9 @@ void Ntuplizer::FillElectron(const edm::Ptr<reco::GsfElectron> ielectron)
     for( auto id : detids ){
         auto energy = lazyToolnoZS->matrixEnergy(clRef,id,0,0,0,0);
         if (energy < 1.e-6) continue;
+        // if (id.det() == DetId::Hcal) {
+        //     std::cout << "hcal!" << " " << energy << std::endl;
+        // }
         if (id.det() == DetId::Ecal && id.subdetId() == EcalBarrel) {
             int ieta = EBDetId(id).ieta();
             int iphi = EBDetId(id).iphi();
@@ -1184,6 +1197,86 @@ void Ntuplizer::FillElectron(const edm::Ptr<reco::GsfElectron> ielectron)
         } else if (id.det() == DetId::Ecal && id.subdetId() == EcalPreshower)  {
         }
     }
+
+    // Track info
+    positionAtVtx = ielectron->trackExtrapolations().positionAtVtx ;     // the track PCA to the beam spot
+    positionAtCalo = ielectron->trackExtrapolations().positionAtCalo ;    // the track PCA to the supercluster position
+    momentumAtVtx = ielectron->trackExtrapolations().momentumAtVtx ;     // the track momentum at the PCA to the beam spot
+    momentumAtCalo = ielectron->trackExtrapolations().momentumAtCalo ;    // the track momentum extrapolated at the supercluster position from the innermost track state
+    momentumOut = ielectron->trackExtrapolations().momentumOut ;       // the track momentum extrapolated at the seed cluster position from the outermost track state
+
+    // Rho Eta Phi == Pt Eta Phi
+    // std::cout <<  " positionAtVtx.Rho(): " << positionAtVtx.Rho() <<  " positionAtVtx.Eta(): " << positionAtVtx.Eta() <<  " positionAtVtx.Phi(): " << positionAtVtx.Phi() <<  std::endl;
+
+    auto hitpattern = ielectron->gsfTrack()->hitPattern();
+    // hitpattern.print(reco::HitPattern::MISSING_INNER_HITS);
+    // hitpattern.print(reco::HitPattern::TRACK_HITS);
+
+    // auto test2 = 1.0 / ielectron->ecalEnergy() - (1.0 / ielectron->trackMomentumAtVtx().R() );
+    // std::cout <<  " test2: " << test2 <<  " 1.0/ielectron->ecalEnergy()-(1.0/momentumAtVtx.R()): " << 1.0/ielectron->ecalEnergy()-(1.0/momentumAtVtx.R()) <<  std::endl;
+
+    // first element will be location as an increasing int for higher subdet and higher layers,
+    // second element will be 3, 2, 1 for valid track hit, missing inner, missing outer, respectively
+    // then we can use the default std::sort to sort by first key to get an ordered list of codes
+    std::vector<std::pair<int,int> > locationsAndTypes;
+    for (int i = 0; i < hitpattern.numberOfHits(reco::HitPattern::TRACK_HITS); ++i) {
+        uint16_t pattern = hitpattern.getHitPattern(reco::HitPattern::TRACK_HITS, i);
+        int location = hitpattern.getSubStructure(pattern)*32 + hitpattern.getLayer(pattern);
+        locationsAndTypes.push_back({location,3});
+        // std::cout <<  " TRACK hitpattern.trackerHitFilter(pattern): " << hitpattern.trackerHitFilter(pattern) <<  std::endl;
+    }
+
+    for (int i = 0; i < hitpattern.numberOfHits(reco::HitPattern::MISSING_INNER_HITS); ++i) {
+        uint16_t pattern = hitpattern.getHitPattern(reco::HitPattern::MISSING_INNER_HITS, i);
+        int location = hitpattern.getSubStructure(pattern)*32 + hitpattern.getLayer(pattern);
+        locationsAndTypes.push_back({location,2});
+        // std::cout <<  " MISSING INNER hitpattern.trackerHitFilter(pattern): " << hitpattern.trackerHitFilter(pattern) <<  std::endl;
+    }
+
+    for (int i = 0; i < hitpattern.numberOfHits(reco::HitPattern::MISSING_OUTER_HITS); ++i) {
+        uint16_t pattern = hitpattern.getHitPattern(reco::HitPattern::MISSING_OUTER_HITS, i);
+        int location = hitpattern.getSubStructure(pattern)*32 + hitpattern.getLayer(pattern);
+        locationsAndTypes.push_back({location,1});
+        // std::cout <<  " MISSING OUTER hitpattern.trackerHitFilter(pattern): " << hitpattern.trackerHitFilter(pattern) <<  std::endl;
+    }
+
+    std::sort(locationsAndTypes.begin(),locationsAndTypes.end());
+    // std::cout <<  " locationsAndTypes.size(): " << locationsAndTypes.size() <<  std::endl;
+
+    for (auto pair : locationsAndTypes) {
+        hit_types.push_back(pair.second);
+        // std::cout << pair.first << "/" << pair.second;
+        // std::cout << " ";
+    }
+    // std::cout << std::endl;
+
+    // want track hits = 3
+    // missing inner = 2
+    // missing outer = 1
+    // pad rest with 0
+
+
+    // enum HitCategory {
+    //     TRACK_HITS = 0,
+    //     MISSING_INNER_HITS = 1,
+    //     MISSING_OUTER_HITS = 2
+    // };
+
+    // std::cout <<  " positionAtVtx: " << positionAtVtx <<  std::endl;
+    // std::cout <<  " positionAtCalo: " << positionAtCalo <<  std::endl;
+    // std::cout <<  " momentumAtVtx: " << momentumAtVtx <<  std::endl;
+    // std::cout <<  " momentumAtCalo: " << momentumAtCalo <<  std::endl;
+    // std::cout <<  " momentumOut: " << momentumOut <<  std::endl;
+
+
+    // auto scele = *(ielectron->superCluster());
+    // auto hcalDepth1 = hcalHelper->hcalESumDepth1(scele);
+    // std::cout <<  " hcalDepth1: " << hcalDepth1 <<  std::endl;
+    // auto test1 = (ielectron->showerShape()).hcalTowersBehindClusters; 
+    // auto test2 = (ielectron->showerShape()).hcalDepth1OverEcalBc; 
+    // std::cout <<  " test1[0].iphi(): " << test1[0].iphi() <<  std::endl;
+    // std::cout <<  " test1.size(): " << test1.size() <<  " test2: " << test2 <<  std::endl;
+
 
     // TrackCluster Matching
     ele_eseedpout = ielectron->eSeedClusterOverPout();
@@ -1685,7 +1778,14 @@ void Ntuplizer::Init()
   rhs_e.clear();
   rhs_iphi.clear();
   rhs_ieta.clear();
+  hit_types.clear();
   ele_3x3 = 0;
+
+  positionAtVtx = math::XYZPointF(0.,0.,0.);
+  positionAtCalo = math::XYZPointF(0.,0.,0.);
+  momentumAtVtx = math::XYZPointF(0.,0.,0.);
+  momentumAtCalo = math::XYZPointF(0.,0.,0.);
+  momentumOut = math::XYZPointF(0.,0.,0.);
 
   //ele_trig_passed_filter = 0;
   //ele_pass_hltEle27WP75GsfTrackIsoFilter = 0;

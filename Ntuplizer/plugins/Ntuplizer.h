@@ -34,6 +34,7 @@
 #include "DataFormats/EcalDetId/interface/ESDetId.h"
 
 #include "RecoEcal/EgammaCoreTools/interface/EcalClusterLazyTools.h"
+#include "RecoEgamma/EgammaElectronAlgos/interface/ElectronHcalHelper.h"
 
 
 #include "TrackingTools/TransientTrack/interface/TransientTrackBuilder.h"
@@ -222,6 +223,8 @@ class Ntuplizer : public edm::EDAnalyzer {
       int ele_N_saved;
       TClonesArray * m_electrons;
 
+      std::unique_ptr<ElectronHcalHelper> hcalHelper;
+
 
       float ele_conversionVertexFitProbability;
       int  mc_ele_isPromptFinalState;
@@ -254,6 +257,14 @@ class Ntuplizer : public edm::EDAnalyzer {
       std::vector<float> rhs_e;
       std::vector<int> rhs_iphi;
       std::vector<int> rhs_ieta;
+
+      std::vector<int> hit_types;
+
+      math::XYZPointF  positionAtVtx ;     // the track PCA to the beam spot
+      math::XYZPointF  positionAtCalo ;    // the track PCA to the supercluster position
+      math::XYZVectorF momentumAtVtx ;     // the track momentum at the PCA to the beam spot
+      math::XYZVectorF momentumAtCalo ;    // the track momentum extrapolated at the supercluster position from the innermost track state
+      math::XYZVectorF momentumOut ;       // the track momentum extrapolated at the seed cluster position from the outermost track state
 
       int ele_ID1_pass;
       int ele_ID2_pass;
