@@ -2,13 +2,14 @@ import glob
 import os
 import numpy as np
 
-def load_data(inputdir="outputs/", prefix="flip_", nfiles=-1, nevents=-1):
+def load_data(inputdir="outputs/", prefix="flip_", nfiles=-1, nevents=-1, skipfiles=0):
     list_xmva_data = []
     list_x_data = []
     list_y_data = []
     tot_events = 0
     nfilesopen = 0
-    ifiles = map(lambda x: int(x.rsplit(".",1)[0].rsplit("_",1)[1]), glob.glob(inputdir+"*xdata*npa"))
+    ifiles = map(lambda x: int(x.rsplit(".",1)[0].rsplit("_",1)[1]), sorted(glob.glob(inputdir+"*xdata*npa")))
+    ifiles = ifiles[skipfiles:]
     for ifile in ifiles:
         fname_mva = "{}/{}dump_mvadata_{}.npa".format(inputdir,prefix,ifile)
         fname_x = "{}/{}dump_xdata_{}.npa".format(inputdir,prefix,ifile)
