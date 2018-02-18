@@ -43,6 +43,8 @@
 #include "DataFormats/Common/interface/TriggerResults.h"
 #include "FWCore/Common/interface/TriggerNames.h"
 
+#include "TLorentzVector.h"
+
 
 // #include <LeptonIsolationHelper/Helper/interface/LeptonIsoHelper.h>
 
@@ -547,11 +549,14 @@ void Ntuplizer::beginJob()
   _mytree->Branch("ele_sclNclus",  &ele_sclNclus,  "ele_sclNclus/I");
   _mytree->Branch("ele_sclphiwidth", &ele_sclphiwidth, "ele_sclphiwidth/F");
   _mytree->Branch("ele_scletawidth", &ele_scletawidth, "ele_scletawidth/F");
+  _mytree->Branch("ecl_E",    &ecl_E);//,    "ele_sclE/F");
+  _mytree->Branch("ecl_eta",  &ecl_eta);//,  "scl_eta/F");
+  _mytree->Branch("ecl_phi",  &ecl_phi);//,  "ele_sclPhi/F");
   //
   _mytree->Branch("ele_psEoverEraw", &ele_psEoverEraw, "ele_psEoverEraw/F");
   _mytree->Branch("ele_oldsirir", &ele_oldsirir);
   //
-  //_mytree->Branch("ele_ecalE",   &ele_ecalE,   "ele_ecalE/F");
+  _mytree->Branch("ele_ecalE",   &ele_ecalE,   "ele_ecalE/F");
   //_mytree->Branch("ele_ecalErr",   &ele_ecalErr,   "ele_ecalErr/F");
 
   // _mytree->Branch("ele_HZZ_iso", &ele_HZZ_iso);
@@ -614,8 +619,8 @@ void Ntuplizer::beginJob()
     //_mytree->Branch("ele_eseedp",&ele_eseedp,"ele_eseedp/F");
     _mytree->Branch("ele_eelepout",&ele_eelepout,"ele_eelepout/F");
     //
-    /*
     _mytree->Branch("ele_pin_mode",&ele_pin_mode,"ele_pin_mode/F");
+    /*
     _mytree->Branch("ele_pout_mode",&ele_pout_mode,"ele_pout_mode/F");
     _mytree->Branch("ele_pTin_mode",&ele_pTin_mode,"ele_pTin_mode/F");
     _mytree->Branch("ele_pTout_mode",&ele_pTout_mode,"ele_pTout_mode/F");
@@ -633,10 +638,17 @@ void Ntuplizer::beginJob()
     _mytree->Branch("ele_trackErr",  &ele_trackErr,  "ele_trackErr/F");
     _mytree->Branch("ele_combErr",   &ele_combErr,   "ele_combErr/F");
     _mytree->Branch("ele_PFcombErr", &ele_PFcombErr, "ele_PFcombErr/F");
+
+    _mytree->Branch("evt_pfmet", &evt_pfmet);
+    _mytree->Branch("evt_pfmetPhi", &evt_pfmetPhi);
+    _mytree->Branch("is_Z", &is_Z);
  
     // Trigger
-    //_mytree->Branch("trig_fired_names",&trig_fired_names,"trig_fired_names[10000]/C");
-    //_mytree->Branch("event_trig_fired", &event_trig_fired);
+    _mytree->Branch("hlt_bits", &hlt_bits);
+    _mytree->Branch("hlt_trigNames", &hlt_trigNames);
+    // _mytree->Branch("hlt_bits", hlt_bits);
+    // _mytree->Branch("trig_fired_names",&trig_fired_names,"trig_fired_names[10000]/C");
+    // _mytree->Branch("event_trig_fired", &event_trig_fired);
     //_mytree->Branch("ele_trig_passed_filter", &ele_trig_passed_filter);
     //_mytree->Branch("ele_pass_hltEle27WP75GsfTrackIsoFilter", &ele_pass_hltEle27WP75GsfTrackIsoFilter);
 
@@ -682,6 +694,8 @@ void Ntuplizer::beginJob()
   _mytree->Branch("seed_ieta", &seed_ieta);
   _mytree->Branch("seed_iphi", &seed_iphi);
   _mytree->Branch("seed_e", &seed_e);
+  _mytree->Branch("seed_eta", &seed_eta);
+  _mytree->Branch("seed_phi", &seed_phi);
   _mytree->Branch("rhs_e", &rhs_e);
   _mytree->Branch("rhs_iphi", &rhs_iphi);
   _mytree->Branch("rhs_ieta", &rhs_ieta);
@@ -694,6 +708,7 @@ void Ntuplizer::beginJob()
   _mytree->Branch("momentumAtVtx", &momentumAtVtx);
   _mytree->Branch("momentumAtCalo", &momentumAtCalo);
   _mytree->Branch("momentumOut", &momentumOut);
+  _mytree->Branch("positionBeamspot", &positionBeamspot);
 
  // _mytree->Branch("mc_gen_ele_p4", &_mc_gen_ele_p4);
   _mytree->Branch("mc_gen_pt", &mc_gen_pT);
@@ -800,6 +815,20 @@ void Ntuplizer::analyze(const edm::Event& iEvent, const edm::EventSetup& iSetup)
   FillMET (iEvent, iSetup);
   LogDebug("") << "After FillMET";
 
+  int ele_prodcharge = 1;
+  int ele_ngood = 0;
+  ROOT::Math::LorentzVector<ROOT::Math::PxPyPzE4D<double> > elsum(0.,0.,0.,0.);
+  for(size_t i_ele = 0;  i_ele <  electronsColl_h->size(); ++i_ele) {
+      const auto ielectron =  electronsColl_h->ptrAt(i_ele); 
+      if(ielectron->pt() < 10.) continue;
+      FillElectron(ielectron);
+      ele_prodcharge *= ielectron->charge(); 
+      elsum += ielectron->p4();
+      ele_ngood++;
+  }
+  is_Z = (ele_ngood == 2) && (ele_prodcharge < 0);
+  is_Z == is_Z && (fabs(elsum.M()-91.2) < 10.);
+
   if(!do_TLE) {
     for(size_t i_ele = 0;  i_ele <  electronsColl_h->size(); ++i_ele) {
       Init();
@@ -866,6 +895,8 @@ void Ntuplizer::FillEvent(const edm::Event& iEvent, const edm::EventSetup& iSetu
 {
   _selectedObjects.clear();
   event_trig_fired.clear();
+  hlt_bits = TBits(1024);
+  hlt_trigNames.clear();
 
   _nEvent = iEvent.id().event();
   _nRun   = iEvent.id().run();
@@ -875,37 +906,37 @@ void Ntuplizer::FillEvent(const edm::Event& iEvent, const edm::EventSetup& iSetu
   // Fired Triggers
   // ----------------
 
-/*
+  /*
   Handle<edm::TriggerResults> triggerResultsHandle;
   iEvent.getByToken (HLTToken, triggerResultsHandle);
   const edm::TriggerNames & triggerNames = iEvent.triggerNames(*triggerResultsHandle);
-  
-  //Get List of available Triggers
-  //for (int in=0;in<(int)triggerNames.size();in++) {
-  //cout << " Trigger Names " << in << " = " << triggerNames.triggerName(in) << endl;
-  //} // for loop in triggernames
-  
-  // LOOP Over Trigger Results
-  char trig_fired_names_local[10000];
-  strcpy(trig_fired_names_local,"*");
-  for (int iHLT = 0 ; 
-       iHLT<static_cast<int>(triggerResultsHandle->size()); 
-       ++iHLT) {	
-    
-    if (triggerResultsHandle->accept (iHLT)) {
-      if ( strlen(trig_fired_names_local) <= 9950) {
-	{
-	  const char* c_str();
-	  string hlt_string = triggerNames.triggerName(iHLT);
-	  event_trig_fired = hlt_string);
-      strcat(trig_fired_names_local,hlt_string.c_str());
-	  strcat(trig_fired_names_local,"*");
-	}
+  // Get List of available Triggers
+  for (int in=0;in<(int)triggerNames.size();in++) {
+      // cout << " Trigger Names " << in << " = " << triggerNames.triggerName(in) << endl;
+      auto trigName = triggerNames.triggerName(in);
+      if (triggerResultsHandle->accept (in) && (trigName.find("Ele")!=std::string::npos)) {
+          hlt_bits.SetBitNumber(in);
+          hlt_trigNames.push_back(trigName);
+      } else {
+          hlt_trigNames.push_back("");
       }
-    } // if HLT
-  }
-  strcpy(trig_fired_names,trig_fired_names_local);
+  } // for loop in triggernames
+  hlt_bits.Compact();
+  */
+
+  // // LOOP Over Trigger Results
+  // strcpy(trig_fired_names_local,"*");
+  // for (int iHLT = 0 ; iHLT<static_cast<int>(triggerResultsHandle->size()); ++iHLT) {	
+  //     if (triggerResultsHandle->accept (iHLT)) {
+  //         // const char* c_str();
+  //         // string hlt_string = triggerNames.triggerName(iHLT);
+  //         // event_trig_fired = hlt_string;
+  //         // strcat(trig_fired_names_local,hlt_string.c_str());
+  //         // strcat(trig_fired_names_local,"*");
+  //     }
+  // } // if HLT
  
+  /*
 if(false) { //inFileType == inputFileTypes::AOD) {
     //open the trigger summary
     edm::InputTag triggerSummaryLabel_ = edm::InputTag("hltTriggerSummaryAOD", "", "HLT");
@@ -1166,6 +1197,8 @@ void Ntuplizer::FillElectron(const edm::Ptr<reco::GsfElectron> ielectron)
     // }
 
     const BasicCluster&  clRef              = *(pat_ele->superCluster()->seed());
+    seed_eta = clRef.eta();
+    seed_phi = clRef.phi();
     ele_3x3 = lazyToolnoZS->e3x3(clRef);
     DetId seedid = pat_ele->superCluster()->seed()->hitsAndFractions().at(0).first;
     std::vector<DetId> detids = lazyToolnoZS->matrixDetId( seedid, -7,7, -14,14 ); // first pair is for ieta, second is for iphi
@@ -1198,7 +1231,12 @@ void Ntuplizer::FillElectron(const edm::Ptr<reco::GsfElectron> ielectron)
         }
     }
 
+    // ecl_eta = ielectron->electronCluster()->eta();
+    // ecl_phi = ielectron->electronCluster()->phi();
+    // ecl_E = ielectron->electronCluster()->correctedEnergy() ;
+
     // Track info
+    positionBeamspot = beamSpot->position(); // beamspot position
     positionAtVtx = ielectron->trackExtrapolations().positionAtVtx ;     // the track PCA to the beam spot
     positionAtCalo = ielectron->trackExtrapolations().positionAtCalo ;    // the track PCA to the supercluster position
     momentumAtVtx = ielectron->trackExtrapolations().momentumAtVtx ;     // the track momentum at the PCA to the beam spot
@@ -1216,13 +1254,17 @@ void Ntuplizer::FillElectron(const edm::Ptr<reco::GsfElectron> ielectron)
     // std::cout <<  " test2: " << test2 <<  " 1.0/ielectron->ecalEnergy()-(1.0/momentumAtVtx.R()): " << 1.0/ielectron->ecalEnergy()-(1.0/momentumAtVtx.R()) <<  std::endl;
 
     // first element will be location as an increasing int for higher subdet and higher layers,
-    // second element will be 3, 2, 1 for valid track hit, missing inner, missing outer, respectively
+    // second element will be 3, 2, 1 for valid track hit, missing, bad, respectively
     // then we can use the default std::sort to sort by first key to get an ordered list of codes
+    // // 0 reserved for padding
     std::vector<std::pair<int,int> > locationsAndTypes;
     for (int i = 0; i < hitpattern.numberOfHits(reco::HitPattern::TRACK_HITS); ++i) {
         uint16_t pattern = hitpattern.getHitPattern(reco::HitPattern::TRACK_HITS, i);
         int location = hitpattern.getSubStructure(pattern)*32 + hitpattern.getLayer(pattern);
-        locationsAndTypes.push_back({location,3});
+        if (hitpattern.validHitFilter(pattern)) locationsAndTypes.push_back({location,3});
+        else if (hitpattern.badHitFilter(pattern)) locationsAndTypes.push_back({location,1});
+        else  locationsAndTypes.push_back({location,2});
+
         // std::cout <<  " TRACK hitpattern.trackerHitFilter(pattern): " << hitpattern.trackerHitFilter(pattern) <<  std::endl;
     }
 
@@ -1236,7 +1278,7 @@ void Ntuplizer::FillElectron(const edm::Ptr<reco::GsfElectron> ielectron)
     for (int i = 0; i < hitpattern.numberOfHits(reco::HitPattern::MISSING_OUTER_HITS); ++i) {
         uint16_t pattern = hitpattern.getHitPattern(reco::HitPattern::MISSING_OUTER_HITS, i);
         int location = hitpattern.getSubStructure(pattern)*32 + hitpattern.getLayer(pattern);
-        locationsAndTypes.push_back({location,1});
+        locationsAndTypes.push_back({location,2});
         // std::cout <<  " MISSING OUTER hitpattern.trackerHitFilter(pattern): " << hitpattern.trackerHitFilter(pattern) <<  std::endl;
     }
 
@@ -1245,9 +1287,12 @@ void Ntuplizer::FillElectron(const edm::Ptr<reco::GsfElectron> ielectron)
 
     for (auto pair : locationsAndTypes) {
         hit_types.push_back(pair.second);
-        // std::cout << pair.first << "/" << pair.second;
-        // std::cout << " ";
     }
+
+    // for (auto pair : locationsAndTypes) {
+    //     std::cout << pair.second;
+    //     std::cout << " ";
+    // }
     // std::cout << std::endl;
 
     // want track hits = 3
@@ -1501,8 +1546,10 @@ void Ntuplizer::FillMET (const edm::Event& iEvent, const edm::EventSetup& iSetup
 {
 	
 
-  //edm::Handle< edm::View<reco::MET> > pfMEThandle;
-  //iEvent.getByToken(pfMETToken_, pfMEThandle);
+  edm::Handle< edm::View<reco::MET> > pfMEThandle;
+  iEvent.getByToken(pfMETToken_, pfMEThandle);
+  evt_pfmet = (pfMEThandle->front()).pt();
+  evt_pfmetPhi = (pfMEThandle->front()).phi();
   
 } // end of Fill MET
 
@@ -1737,6 +1784,9 @@ void Ntuplizer::Init()
   ele_sclE=0;
   ele_sclEt=0;
   scl_eta=0;
+  ecl_eta=0;
+  ecl_phi=0;
+  ecl_E=0;
   ele_sclPhi=0;
   ele_sclNclus=0;
   ele_sclphiwidth=0;
@@ -1774,6 +1824,8 @@ void Ntuplizer::Init()
   seed_ieta = 0;
   seed_iphi = 0;
   seed_e = 0;
+  seed_eta = 0;
+  seed_phi = 0;
 
   rhs_e.clear();
   rhs_iphi.clear();
@@ -1781,6 +1833,7 @@ void Ntuplizer::Init()
   hit_types.clear();
   ele_3x3 = 0;
 
+  positionBeamspot = math::XYZPointF(0.,0.,0.);
   positionAtVtx = math::XYZPointF(0.,0.,0.);
   positionAtCalo = math::XYZPointF(0.,0.,0.);
   momentumAtVtx = math::XYZPointF(0.,0.,0.);

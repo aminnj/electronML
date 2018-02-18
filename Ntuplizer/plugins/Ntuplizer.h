@@ -49,6 +49,9 @@
 #include "TVector3.h"
 #include "TH1F.h"
 #include "TH2F.h"
+#include "TBits.h"
+#include "TString.h"
+#include "TLorentzVector.h"
 #include "TFile.h"
 #include "Math/VectorUtil.h"
 
@@ -254,12 +257,15 @@ class Ntuplizer : public edm::EDAnalyzer {
       int seed_ieta;
       int seed_iphi;
       float seed_e;
+      float seed_eta;
+      float seed_phi;
       std::vector<float> rhs_e;
       std::vector<int> rhs_iphi;
       std::vector<int> rhs_ieta;
 
       std::vector<int> hit_types;
 
+      math::XYZPointF  positionBeamspot ;  // the position of the beamspot
       math::XYZPointF  positionAtVtx ;     // the track PCA to the beam spot
       math::XYZPointF  positionAtCalo ;    // the track PCA to the supercluster position
       math::XYZVectorF momentumAtVtx ;     // the track momentum at the PCA to the beam spot
@@ -286,11 +292,16 @@ class Ntuplizer : public edm::EDAnalyzer {
       bool ele_ecalDrivenSeed;
       bool ele_trackerDrivenSeed;
 
+      float evt_pfmet;
+      float evt_pfmetPhi;
+      bool is_Z;
 
       float ele_oldsirir;
 
 
       string event_trig_fired;
+      TBits hlt_bits;
+      vector<string> hlt_trigNames;
       bool ele_trig_passed_filter;
       bool ele_pass_hltEle27WP75GsfTrackIsoFilter;
       float ele_full5x5_hcalOverEcal;
@@ -334,6 +345,8 @@ class Ntuplizer : public edm::EDAnalyzer {
       float ele_IP, ele_IPError, ele_SIP ;
       float ele_sclE, ele_sclEt, scl_eta, ele_sclPhi, ele_sclRawE;
       int ele_sclNclus;
+
+      float ecl_eta, ecl_phi, ecl_E;
       
     
       float ele_ecalE, ele_ecalErr, ele_trackErr, ele_combErr, ele_PFcombErr;
