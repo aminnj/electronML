@@ -14,3 +14,7 @@ pip install --user uproot
 ```
 
 
+### Convert ROOT to npz
+```bash
+python convert.py # after editing input files
+```
