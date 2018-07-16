@@ -644,8 +644,8 @@ void Ntuplizer::beginJob()
     _mytree->Branch("is_Z", &is_Z);
  
     // Trigger
-    _mytree->Branch("hlt_bits", &hlt_bits);
-    _mytree->Branch("hlt_trigNames", &hlt_trigNames);
+    // _mytree->Branch("hlt_bits", &hlt_bits);
+    // _mytree->Branch("hlt_trigNames", &hlt_trigNames);
     // _mytree->Branch("hlt_bits", hlt_bits);
     // _mytree->Branch("trig_fired_names",&trig_fired_names,"trig_fired_names[10000]/C");
     // _mytree->Branch("event_trig_fired", &event_trig_fired);
@@ -693,22 +693,71 @@ void Ntuplizer::beginJob()
 
   _mytree->Branch("seed_ieta", &seed_ieta);
   _mytree->Branch("seed_iphi", &seed_iphi);
+  _mytree->Branch("seed_ix", &seed_ix);
+  _mytree->Branch("seed_iy", &seed_iy);
   _mytree->Branch("seed_e", &seed_e);
   _mytree->Branch("seed_eta", &seed_eta);
   _mytree->Branch("seed_phi", &seed_phi);
+  _mytree->Branch("seed_time", &seed_time);
+  _mytree->Branch("ele_3x3", &ele_3x3);
+
   _mytree->Branch("rhs_e", &rhs_e);
   _mytree->Branch("rhs_iphi", &rhs_iphi);
   _mytree->Branch("rhs_ieta", &rhs_ieta);
-  _mytree->Branch("ele_3x3", &ele_3x3);
+  _mytree->Branch("rhs_time", &rhs_time);
+  _mytree->Branch("rhs_chi2", &rhs_chi2);
 
+  _mytree->Branch("rhs_ee_e",  &rhs_ee_e);
+  _mytree->Branch("rhs_ee_ix", &rhs_ee_ix);
+  _mytree->Branch("rhs_ee_iy", &rhs_ee_iy);
+  _mytree->Branch("rhs_ee_iz", &rhs_ee_iz);
+
+  _mytree->Branch("rhs_es_e",     &rhs_es_e);
+  _mytree->Branch("rhs_es_ix",    &rhs_es_ix);
+  _mytree->Branch("rhs_es_iy",    &rhs_es_iy);
+  _mytree->Branch("rhs_es_iz",    &rhs_es_iz);
+  _mytree->Branch("rhs_es_plane", &rhs_es_plane);
+  _mytree->Branch("rhs_es_strip", &rhs_es_strip);
+
+  _mytree->Branch("hit_locations", &hit_locations);
   _mytree->Branch("hit_types", &hit_types);
+  // _mytree->Branch("parvec", &parvec);
+  // _mytree->Branch("covmat", &covmat);
 
-  _mytree->Branch("positionAtVtx", &positionAtVtx);
-  _mytree->Branch("positionAtCalo", &positionAtCalo);
-  _mytree->Branch("momentumAtVtx", &momentumAtVtx);
-  _mytree->Branch("momentumAtCalo", &momentumAtCalo);
-  _mytree->Branch("momentumOut", &momentumOut);
-  _mytree->Branch("positionBeamspot", &positionBeamspot);
+  // _mytree->Branch("positionAtVtx", &positionAtVtx);
+  // _mytree->Branch("positionAtCalo", &positionAtCalo);
+  // _mytree->Branch("momentumAtVtx", &momentumAtVtx);
+  // _mytree->Branch("momentumAtCalo", &momentumAtCalo);
+  // _mytree->Branch("momentumOut", &momentumOut);
+  // _mytree->Branch("positionBeamspot", &positionBeamspot);
+
+  _mytree->Branch("r_positionAtVtx", &r_positionAtVtx);
+  _mytree->Branch("r_positionAtCalo", &r_positionAtCalo);
+  _mytree->Branch("r_momentumAtVtx", &r_momentumAtVtx);
+  _mytree->Branch("r_momentumAtCalo", &r_momentumAtCalo);
+  _mytree->Branch("r_momentumOut", &r_momentumOut);
+  _mytree->Branch("r_positionBeamspot", &r_positionBeamspot);
+
+  _mytree->Branch("rho_positionAtVtx", &rho_positionAtVtx);
+  _mytree->Branch("rho_positionAtCalo", &rho_positionAtCalo);
+  _mytree->Branch("rho_momentumAtVtx", &rho_momentumAtVtx);
+  _mytree->Branch("rho_momentumAtCalo", &rho_momentumAtCalo);
+  _mytree->Branch("rho_momentumOut", &rho_momentumOut);
+  _mytree->Branch("rho_positionBeamspot", &rho_positionBeamspot);
+
+  _mytree->Branch("eta_positionAtVtx", &eta_positionAtVtx);
+  _mytree->Branch("eta_positionAtCalo", &eta_positionAtCalo);
+  _mytree->Branch("eta_momentumAtVtx", &eta_momentumAtVtx);
+  _mytree->Branch("eta_momentumAtCalo", &eta_momentumAtCalo);
+  _mytree->Branch("eta_momentumOut", &eta_momentumOut);
+  _mytree->Branch("eta_positionBeamspot", &eta_positionBeamspot);
+
+  _mytree->Branch("phi_positionAtVtx", &phi_positionAtVtx);
+  _mytree->Branch("phi_positionAtCalo", &phi_positionAtCalo);
+  _mytree->Branch("phi_momentumAtVtx", &phi_momentumAtVtx);
+  _mytree->Branch("phi_momentumAtCalo", &phi_momentumAtCalo);
+  _mytree->Branch("phi_momentumOut", &phi_momentumOut);
+  _mytree->Branch("phi_positionBeamspot", &phi_positionBeamspot);
 
  // _mytree->Branch("mc_gen_ele_p4", &_mc_gen_ele_p4);
   _mytree->Branch("mc_gen_pt", &mc_gen_pT);
@@ -1160,80 +1209,117 @@ void Ntuplizer::FillElectron(const edm::Ptr<reco::GsfElectron> ielectron)
     ele_trackMomentumAtVtx_R = ielectron->trackMomentumAtVtx().R();
     ele_full5x5_hcalOverEcal = ielectron->full5x5_hcalOverEcal();
     ele_echarge = ielectron->charge(); 
-//    ele_rho = 
 
-    //ele_ID1_pass = (*ID1_pass_map)[ielectron]);
-    //ele_ID2_pass = (*ID2_pass_map)[ielectron]);
+    // Useful vim jumps
+    // /cvmfs/cms.cern.ch/slc6_amd64_gcc493/cms/cmssw/CMSSW_8_0_20/src/DataFormats/PatCandidates/interface
+    // /cvmfs/cms.cern.ch/slc6_amd64_gcc530/cms/cmssw/CMSSW_9_2_3/src/DataFormats/EcalRecHit/interface/EcalRecHit.h
+    // /cvmfs/cms.cern.ch/slc6_amd64_gcc530/cms/cmssw/CMSSW_9_2_3/src/RecoEcal/EgammaCoreTools/src
+    // /cvmfs/cms.cern.ch/slc6_amd64_gcc530/cms/cmssw/CMSSW_9_2_3/src/RecoEcal/EgammaCoreTools/interface
 
-
-//    ele_index = i_ele;
-
-    // float fsr = 0;
-
-    // ele_HZZ_iso = isAOD ?-1 :LeptonIsoHelper::combRelIsoPF(sampleType, setup, ele_rho, *ielectron, fsr);
-  //  LogPrint("") << "-Werror=unused-but-set-variabl:" << rhoForEle;
-  //      ele_HZZ_iso = iso;
-  //
-
-  // RecHits
-  // /cvmfs/cms.cern.ch/slc6_amd64_gcc493/cms/cmssw/CMSSW_8_0_20/src/DataFormats/PatCandidates/interface
-
-    // auto seed = pat_ele->superCluster()->seed();
-    // std::cout <<  " seed->size(): " << seed->size() <<  std::endl;
-    // // auto rechits = pat_ele->recHits();
-    // auto clusters = pat_ele->basicClusters();
-    // std::cout <<  " clusters.size(): " << clusters.size() <<  std::endl;
-    // std::cout <<  " seed->energy(): " << seed->energy() <<  std::endl;
-    // std::cout <<  " seed->hitsAndFractions().size(): " << seed->hitsAndFractions().size() <<  std::endl;
-    //   // for(size_t ihit = 0; ihit<seed->size(); ++ ihit){
-    //   //       auto hit = (seed)[ihit];
-    //   //       std::cout <<  " hit.eta(): " << hit.eta() <<  " hit.phi(): " << hit.phi() <<  " hit.energy(): " << hit.energy() <<  std::endl;
-    //   // }
-
-    // for (auto pair : seed->hitsAndFractions()) {
-    //     // auto detid = pair.first;
-    //     auto fraction = pair.second;
-    //     std::cout <<  " fraction: " << fraction <<  std::endl;
-    // }
-
+    std::map<std::pair<int,int>, std::tuple<float,float> > ietaiphi_to_timeinfo;
+    std::map<std::pair<int,int>, float> ietaiphi_to_energy;
     const BasicCluster&  clRef              = *(pat_ele->superCluster()->seed());
+    {
+        auto rechits = lazyToolnoZS->getEcalEBRecHitCollection();
+        for (EBRecHitCollection::const_iterator it = rechits->begin(); it != rechits->end(); ++it) {
+            int hit_ieta = EBDetId(it->detid()).ieta();
+            int hit_iphi = EBDetId(it->detid()).iphi();
+            float energy = it->energy();
+            float hit_time = it->time();
+            float hit_timechi2 = it->chi2();
+            ietaiphi_to_timeinfo[{hit_ieta,hit_iphi}] = std::make_tuple(hit_time,hit_timechi2);
+            ietaiphi_to_energy[{hit_ieta,hit_iphi}] = energy;
+        }
+    }
+
+
     seed_eta = clRef.eta();
     seed_phi = clRef.phi();
+    // seed_time = lazyToolnoZS->BasicClusterSeedTime(clRef); // causes segfault???
     ele_3x3 = lazyToolnoZS->e3x3(clRef);
     DetId seedid = pat_ele->superCluster()->seed()->hitsAndFractions().at(0).first;
+    // 29x15
     std::vector<DetId> detids = lazyToolnoZS->matrixDetId( seedid, -7,7, -14,14 ); // first pair is for ieta, second is for iphi
+    // 29x29
+    // std::vector<DetId> detids = lazyToolnoZS->matrixDetId( seedid, -14,14, -14,14 ); // first pair is for ieta, second is for iphi
+
+    // /cvmfs/cms.cern.ch/slc6_amd64_gcc530/cms/cmssw/CMSSW_9_2_3/src/DataFormats/CaloRecHit/src
+
 
     if (seedid.det() == DetId::Ecal && seedid.subdetId() == EcalBarrel) {
         seed_ieta = EBDetId(seedid).ieta();
         seed_iphi = EBDetId(seedid).iphi();
+        seed_e = lazyToolnoZS->matrixEnergy(clRef,seedid,0,0,0,0);
+    } else if (seedid.det() == DetId::Ecal && seedid.subdetId() == EcalEndcap) {
+        seed_ix = EEDetId(seedid).ix();
+        seed_iy = EEDetId(seedid).iy();
         seed_e = lazyToolnoZS->matrixEnergy(clRef,seedid,0,0,0,0);
     } else {
         seed_ieta = 0;
         seed_iphi = 0;
         seed_e = 0;
     }
-                
-    for( auto id : detids ){
-        auto energy = lazyToolnoZS->matrixEnergy(clRef,id,0,0,0,0);
-        if (energy < 1.e-6) continue;
-        // if (id.det() == DetId::Hcal) {
-        //     std::cout << "hcal!" << " " << energy << std::endl;
-        // }
-        if (id.det() == DetId::Ecal && id.subdetId() == EcalBarrel) {
+
+    bool useSConly = true;
+
+    if (useSConly) {
+
+        auto supercluster = pat_ele->superCluster();
+        std::vector<std::pair<DetId,float> > hfSC = supercluster->hitsAndFractions();
+        for(std::vector<std::pair<DetId,float> >::const_iterator it=hfSC.begin(); it!=hfSC.end(); ++it) {
+            DetId id = (*it).first;
+            if (!( id.subdetId() == EcalBarrel)) continue;
             int ieta = EBDetId(id).ieta();
             int iphi = EBDetId(id).iphi();
-            // std::cout <<  " ieta: " << ieta <<  " iphi: " << iphi <<  " energy: " << energy <<  std::endl;
+            float rawenergy = ietaiphi_to_energy[{ieta,iphi}];
+            float frac = (*it).second;
+            float energy = rawenergy*frac;
+
             rhs_e.push_back(energy);
             rhs_iphi.push_back(iphi);
             rhs_ieta.push_back(ieta);
-        } else if (id.det() == DetId::Ecal && id.subdetId() == EcalEndcap)  {
-        } else if (id.det() == DetId::Ecal && id.subdetId() == EcalPreshower)  {
         }
-    }
 
-    // ecl_eta = ielectron->electronCluster()->eta();
-    // ecl_phi = ielectron->electronCluster()->phi();
-    // ecl_E = ielectron->electronCluster()->correctedEnergy() ;
+    } else {
+
+        for( auto id : detids ){
+            auto energy = lazyToolnoZS->matrixEnergy(clRef,id,0,0,0,0);
+            if (energy < 1.e-6) continue;
+            if (id.det() == DetId::Ecal && id.subdetId() == EcalBarrel) {
+                int ieta = EBDetId(id).ieta();
+                int iphi = EBDetId(id).iphi();
+                rhs_e.push_back(energy);
+                rhs_iphi.push_back(iphi);
+                rhs_ieta.push_back(ieta);
+                // auto timeinfo = ietaiphi_to_timeinfo[{ieta,iphi}];
+                // rhs_time.push_back(std::get<0>(timeinfo));
+                // rhs_chi2.push_back(std::get<1>(timeinfo));
+
+            } else if (id.det() == DetId::Ecal && id.subdetId() == EcalEndcap)  {
+                int ix = EEDetId(id).ix();
+                int iy = EEDetId(id).iy();
+                int iz = EEDetId(id).zside();
+                rhs_ee_e.push_back(energy);
+                rhs_ee_ix.push_back(ix);
+                rhs_ee_iy.push_back(iy);
+                rhs_ee_iz.push_back(iz);
+
+            } else if (id.det() == DetId::Ecal && id.subdetId() == EcalPreshower)  {
+                // int ix = ESDetId(id).six();
+                // int iy = ESDetId(id).siy();
+                // int iz = ESDetId(id).zside();
+                // int strip = ESDetId(id).strip();
+                // int plane = ESDetId(id).plane();
+                // rhs_es_e.push_back(energy);
+                // rhs_es_ix.push_back(ix);
+                // rhs_es_iy.push_back(iy);
+                // rhs_es_iz.push_back(iz);
+                // rhs_es_plane.push_back(plane);
+                // rhs_es_strip.push_back(strip);
+            }
+        }
+
+    }
 
     // Track info
     positionBeamspot = beamSpot->position(); // beamspot position
@@ -1243,15 +1329,35 @@ void Ntuplizer::FillElectron(const edm::Ptr<reco::GsfElectron> ielectron)
     momentumAtCalo = ielectron->trackExtrapolations().momentumAtCalo ;    // the track momentum extrapolated at the supercluster position from the innermost track state
     momentumOut = ielectron->trackExtrapolations().momentumOut ;       // the track momentum extrapolated at the seed cluster position from the outermost track state
 
-    // Rho Eta Phi == Pt Eta Phi
-    // std::cout <<  " positionAtVtx.Rho(): " << positionAtVtx.Rho() <<  " positionAtVtx.Eta(): " << positionAtVtx.Eta() <<  " positionAtVtx.Phi(): " << positionAtVtx.Phi() <<  std::endl;
+    r_positionBeamspot = positionBeamspot.R();
+    r_positionAtVtx = positionAtVtx.R();
+    r_positionAtCalo = positionAtCalo.R();
+    r_momentumAtVtx = momentumAtVtx.R();
+    r_momentumAtCalo = momentumAtCalo.R();
+    r_momentumOut = momentumOut.R();
+
+    rho_positionBeamspot = positionBeamspot.Rho();
+    rho_positionAtVtx = positionAtVtx.Rho();
+    rho_positionAtCalo = positionAtCalo.Rho();
+    rho_momentumAtVtx = momentumAtVtx.Rho();
+    rho_momentumAtCalo = momentumAtCalo.Rho();
+    rho_momentumOut = momentumOut.Rho();
+
+    eta_positionBeamspot = positionBeamspot.Eta();
+    eta_positionAtVtx = positionAtVtx.Eta();
+    eta_positionAtCalo = positionAtCalo.Eta();
+    eta_momentumAtVtx = momentumAtVtx.Eta();
+    eta_momentumAtCalo = momentumAtCalo.Eta();
+    eta_momentumOut = momentumOut.Eta();
+
+    phi_positionBeamspot = positionBeamspot.Phi();
+    phi_positionAtVtx = positionAtVtx.Phi();
+    phi_positionAtCalo = positionAtCalo.Phi();
+    phi_momentumAtVtx = momentumAtVtx.Phi();
+    phi_momentumAtCalo = momentumAtCalo.Phi();
+    phi_momentumOut = momentumOut.Phi();
 
     auto hitpattern = ielectron->gsfTrack()->hitPattern();
-    // hitpattern.print(reco::HitPattern::MISSING_INNER_HITS);
-    // hitpattern.print(reco::HitPattern::TRACK_HITS);
-
-    // auto test2 = 1.0 / ielectron->ecalEnergy() - (1.0 / ielectron->trackMomentumAtVtx().R() );
-    // std::cout <<  " test2: " << test2 <<  " 1.0/ielectron->ecalEnergy()-(1.0/momentumAtVtx.R()): " << 1.0/ielectron->ecalEnergy()-(1.0/momentumAtVtx.R()) <<  std::endl;
 
     // first element will be location as an increasing int for higher subdet and higher layers,
     // second element will be 3, 2, 1 for valid track hit, missing, bad, respectively
@@ -1267,60 +1373,31 @@ void Ntuplizer::FillElectron(const edm::Ptr<reco::GsfElectron> ielectron)
 
         // std::cout <<  " TRACK hitpattern.trackerHitFilter(pattern): " << hitpattern.trackerHitFilter(pattern) <<  std::endl;
     }
-
     for (int i = 0; i < hitpattern.numberOfHits(reco::HitPattern::MISSING_INNER_HITS); ++i) {
         uint16_t pattern = hitpattern.getHitPattern(reco::HitPattern::MISSING_INNER_HITS, i);
         int location = hitpattern.getSubStructure(pattern)*32 + hitpattern.getLayer(pattern);
         locationsAndTypes.push_back({location,2});
         // std::cout <<  " MISSING INNER hitpattern.trackerHitFilter(pattern): " << hitpattern.trackerHitFilter(pattern) <<  std::endl;
     }
-
     for (int i = 0; i < hitpattern.numberOfHits(reco::HitPattern::MISSING_OUTER_HITS); ++i) {
         uint16_t pattern = hitpattern.getHitPattern(reco::HitPattern::MISSING_OUTER_HITS, i);
         int location = hitpattern.getSubStructure(pattern)*32 + hitpattern.getLayer(pattern);
         locationsAndTypes.push_back({location,2});
         // std::cout <<  " MISSING OUTER hitpattern.trackerHitFilter(pattern): " << hitpattern.trackerHitFilter(pattern) <<  std::endl;
     }
-
     std::sort(locationsAndTypes.begin(),locationsAndTypes.end());
     // std::cout <<  " locationsAndTypes.size(): " << locationsAndTypes.size() <<  std::endl;
 
-    for (auto pair : locationsAndTypes) {
-        hit_types.push_back(pair.second);
-    }
+    // for (auto pair : locationsAndTypes) {
+    //     hit_locations.push_back(pair.first);
+    //     hit_types.push_back(pair.second);
+    // }
 
     // for (auto pair : locationsAndTypes) {
     //     std::cout << pair.second;
     //     std::cout << " ";
     // }
     // std::cout << std::endl;
-
-    // want track hits = 3
-    // missing inner = 2
-    // missing outer = 1
-    // pad rest with 0
-
-
-    // enum HitCategory {
-    //     TRACK_HITS = 0,
-    //     MISSING_INNER_HITS = 1,
-    //     MISSING_OUTER_HITS = 2
-    // };
-
-    // std::cout <<  " positionAtVtx: " << positionAtVtx <<  std::endl;
-    // std::cout <<  " positionAtCalo: " << positionAtCalo <<  std::endl;
-    // std::cout <<  " momentumAtVtx: " << momentumAtVtx <<  std::endl;
-    // std::cout <<  " momentumAtCalo: " << momentumAtCalo <<  std::endl;
-    // std::cout <<  " momentumOut: " << momentumOut <<  std::endl;
-
-
-    // auto scele = *(ielectron->superCluster());
-    // auto hcalDepth1 = hcalHelper->hcalESumDepth1(scele);
-    // std::cout <<  " hcalDepth1: " << hcalDepth1 <<  std::endl;
-    // auto test1 = (ielectron->showerShape()).hcalTowersBehindClusters; 
-    // auto test2 = (ielectron->showerShape()).hcalDepth1OverEcalBc; 
-    // std::cout <<  " test1[0].iphi(): " << test1[0].iphi() <<  std::endl;
-    // std::cout <<  " test1.size(): " << test1.size() <<  " test2: " << test2 <<  std::endl;
 
 
     // TrackCluster Matching
@@ -1341,18 +1418,6 @@ void Ntuplizer::FillElectron(const edm::Ptr<reco::GsfElectron> ielectron)
     ele_deltaetain   = ielectron->deltaEtaSuperClusterTrackAtVtx();
     ele_deltaphiin   = ielectron->deltaPhiSuperClusterTrackAtVtx();   
 
-    // Shower Shape
-    /*
-    ele_sigmaietaieta = (ielectron->showerShape()).sigmaIetaIeta; //  ielectron->
-    ele_sigmaetaeta   = (ielectron->showerShape()).sigmaEtaEta ; //ielectron->sigmaEtaEta() ;
-    ele_sigmaiphiiphi = (ielectron->showerShape()).sigmaIphiIphi;
-    ele_e15           = (ielectron->showerShape()).e1x5; // ;ielectron->e1x5() ;
-    ele_e25max        = (ielectron->showerShape()).e2x5Max; // ;ielectron->e2x5Max() ;
-    ele_e55           = (ielectron->showerShape()).e5x5; // ;ielectron->e5x5() ;
-    ele_r9            = (ielectron->showerShape()).r9; 
-    */
-    //
-   
     //ele_oldsigmaetaeta   =  ielectron->full5x5_sigmaEtaEta();    
     ele_oldsigmaietaieta =  ielectron->full5x5_sigmaIetaIeta();  
     ele_oldsigmaiphiiphi =  ielectron->full5x5_sigmaIphiIphi();  
@@ -1823,14 +1888,35 @@ void Ntuplizer::Init()
 
   seed_ieta = 0;
   seed_iphi = 0;
+  seed_ix = 0;
+  seed_iy = 0;
   seed_e = 0;
   seed_eta = 0;
   seed_phi = 0;
+  seed_time = 0;
 
   rhs_e.clear();
   rhs_iphi.clear();
   rhs_ieta.clear();
+  rhs_time.clear();
+  rhs_chi2.clear();
+
+  rhs_ee_e.clear();
+  rhs_ee_ix.clear();
+  rhs_ee_iy.clear();
+  rhs_ee_iz.clear();
+
+  rhs_es_e.clear();
+  rhs_es_ix.clear();
+  rhs_es_iy.clear();
+  rhs_es_iz.clear();
+  rhs_es_strip.clear();
+  rhs_es_plane.clear();
+
+  hit_locations.clear();
   hit_types.clear();
+  parvec.clear();
+  covmat.clear();
   ele_3x3 = 0;
 
   positionBeamspot = math::XYZPointF(0.,0.,0.);
@@ -1839,6 +1925,34 @@ void Ntuplizer::Init()
   momentumAtVtx = math::XYZPointF(0.,0.,0.);
   momentumAtCalo = math::XYZPointF(0.,0.,0.);
   momentumOut = math::XYZPointF(0.,0.,0.);
+
+  r_positionBeamspot = 0;
+  r_positionAtVtx = 0;
+  r_positionAtCalo = 0;
+  r_momentumAtVtx = 0;
+  r_momentumAtCalo = 0;
+  r_momentumOut = 0;
+
+  rho_positionBeamspot = 0;
+  rho_positionAtVtx = 0;
+  rho_positionAtCalo = 0;
+  rho_momentumAtVtx = 0;
+  rho_momentumAtCalo = 0;
+  rho_momentumOut = 0;
+
+  eta_positionBeamspot = 0;
+  eta_positionAtVtx = 0;
+  eta_positionAtCalo = 0;
+  eta_momentumAtVtx = 0;
+  eta_momentumAtCalo = 0;
+  eta_momentumOut = 0;
+
+  phi_positionBeamspot = 0;
+  phi_positionAtVtx = 0;
+  phi_positionAtCalo = 0;
+  phi_momentumAtVtx = 0;
+  phi_momentumAtCalo = 0;
+  phi_momentumOut = 0;
 
   //ele_trig_passed_filter = 0;
   //ele_pass_hltEle27WP75GsfTrackIsoFilter = 0;

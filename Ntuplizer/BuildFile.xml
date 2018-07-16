@@ -2,6 +2,7 @@
 <use   name="DataFormats/EgammaCandidates"/>
 <use   name="DataFormats/EgammaReco"/>
 <use   name="DataFormats/TrackReco"/>
+<use   name="DataFormats/GsfTrackReco"/>
 <use   name="CommonTools/UtilAlgos"/>
 <use   name="FWCore/Framework"/>
 <use   name="FWCore/PluginManager"/>

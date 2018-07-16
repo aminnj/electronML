@@ -10,6 +10,8 @@
 #include <DataFormats/HepMCCandidate/interface/GenParticle.h>
 #include "SimDataFormats/GeneratorProducts/interface/GenEventInfoProduct.h"
 #include "DataFormats/EgammaCandidates/interface/GsfElectron.h"
+#include "DataFormats/GsfTrackReco/interface/GsfTrackFwd.h"
+#include "DataFormats/GsfTrackReco/interface/GsfTrack.h"
 #include "DataFormats/EgammaCandidates/interface/GsfElectronFwd.h"
 #include "DataFormats/PatCandidates/interface/Electron.h"
 #include "DataFormats/PatCandidates/interface/Photon.h"
@@ -256,14 +258,35 @@ class Ntuplizer : public edm::EDAnalyzer {
 
       int seed_ieta;
       int seed_iphi;
+      int seed_ix;
+      int seed_iy;
       float seed_e;
       float seed_eta;
       float seed_phi;
+      float seed_time;
       std::vector<float> rhs_e;
       std::vector<int> rhs_iphi;
       std::vector<int> rhs_ieta;
+      std::vector<float> rhs_time;
+      std::vector<float> rhs_chi2;
 
+      std::vector<float> rhs_ee_e;
+      std::vector<int>   rhs_ee_ix;
+      std::vector<int>   rhs_ee_iy;
+      std::vector<int>   rhs_ee_iz;
+
+      std::vector<float> rhs_es_e;
+      std::vector<int>   rhs_es_ix;
+      std::vector<int>   rhs_es_iy;
+      std::vector<int>   rhs_es_iz;
+      std::vector<int>   rhs_es_plane;
+      std::vector<int>   rhs_es_strip;
+
+      std::vector<int> hit_locations;
       std::vector<int> hit_types;
+
+      std::vector<float> parvec;
+      std::vector<float> covmat;
 
       math::XYZPointF  positionBeamspot ;  // the position of the beamspot
       math::XYZPointF  positionAtVtx ;     // the track PCA to the beam spot
@@ -271,6 +294,34 @@ class Ntuplizer : public edm::EDAnalyzer {
       math::XYZVectorF momentumAtVtx ;     // the track momentum at the PCA to the beam spot
       math::XYZVectorF momentumAtCalo ;    // the track momentum extrapolated at the supercluster position from the innermost track state
       math::XYZVectorF momentumOut ;       // the track momentum extrapolated at the seed cluster position from the outermost track state
+
+      float r_positionBeamspot;
+      float r_positionAtVtx;
+      float r_positionAtCalo;
+      float r_momentumAtVtx;
+      float r_momentumAtCalo;
+      float r_momentumOut;
+
+      float rho_positionBeamspot;
+      float rho_positionAtVtx;
+      float rho_positionAtCalo;
+      float rho_momentumAtVtx;
+      float rho_momentumAtCalo;
+      float rho_momentumOut;
+
+      float eta_positionBeamspot;
+      float eta_positionAtVtx;
+      float eta_positionAtCalo;
+      float eta_momentumAtVtx;
+      float eta_momentumAtCalo;
+      float eta_momentumOut;
+
+      float phi_positionBeamspot;
+      float phi_positionAtVtx;
+      float phi_positionAtCalo;
+      float phi_momentumAtVtx;
+      float phi_momentumAtCalo;
+      float phi_momentumOut;
 
       int ele_ID1_pass;
       int ele_ID2_pass;

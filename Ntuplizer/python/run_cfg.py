@@ -38,6 +38,7 @@ switchOnVIDPhotonIdProducer(process, dataFormat)
 my_id_modules = [
                  'RecoEgamma.ElectronIdentification.Identification.mvaElectronID_Spring15_25ns_Trig_V1_cff',
                  'RecoEgamma.ElectronIdentification.Identification.mvaElectronID_Spring15_25ns_nonTrig_V1_cff',
+                 'RecoEgamma.ElectronIdentification.Identification.mvaElectronID_Spring16_GeneralPurpose_V1_cff'
                 ]
 
 #add them to the VID producer
@@ -73,6 +74,7 @@ tle_ntuple = cms.EDAnalyzer('Ntuplizer',
                                    # input collection names AOD
                                    electronsAOD = cms.InputTag('gedGsfElectrons'),
                                    verticesAOD = cms.InputTag('offlinePrimaryVertices'),
+                                   addPileupInfo = cms.InputTag('slimmedAddPileupInfo'),
                                    conversionsAOD = cms.InputTag('allConversions'),
                                    genParticlesAOD = cms.InputTag('genParticles'), 
                                    genEventInfoProductAOD = cms.InputTag('generator'),
@@ -132,15 +134,18 @@ process.reg = tle_ntuple.clone()
 # fileNameForSample = 'ntuple'
 
 
-#process.maxEvents = cms.untracked.PSet( input = cms.untracked.int32(100) )
-process.maxEvents = cms.untracked.PSet( input = cms.untracked.int32(10000) )
+process.maxEvents = cms.untracked.PSet( input = cms.untracked.int32(1000) )
+# process.maxEvents = cms.untracked.PSet( input = cms.untracked.int32(1000) )
 
 process.source = cms.Source("PoolSource",
 #    fileNames = cms.untracked.vstring('file:/data_CMS/cms/davignon/Trigger_WithThomas/CMSSW_7_6_0_pre7/src/L1Trigger/L1TNtuples/00BEC5EF-1472-E511-806C-02163E0141EA.root')
 fileNames = cms.untracked.vstring(
     # DYJetsToLL_M-50_TuneCUETP8M1_13TeV-madgraphMLM-pythia8/RunIISummer16MiniAODv2-PUMoriond17_80X_mcRun2_asymptotic_2016_TrancheIV_v6_ext1-v2/MINIAODSIM
     # '/store/mc/RunIISummer16MiniAODv2/DYJetsToLL_M-50_TuneCUETP8M1_13TeV-madgraphMLM-pythia8/MINIAODSIM/PUMoriond17_80X_mcRun2_asymptotic_2016_TrancheIV_v6_ext1-v2/50000/024D0A89-34C4-E611-AEF9-008CFA111348.root',
-    'file:../024D0A89-34C4-E611-AEF9-008CFA111348.root', # above  file
+    # '/store/mc/RunIISummer16MiniAODv2/TT_TuneCUETP8M2T4_13TeV-powheg-pythia8/MINIAODSIM/PUMoriond17_80X_mcRun2_asymptotic_2016_TrancheIV_v6-v1/80000/B8BB11E7-AABE-E611-A2A6-0025905B8582.root',
+    # /store/mc/RunIISummer16MiniAODv2/TT_TuneCUETP8M2T4_13TeV-powheg-pythia8/MINIAODSIM/PUMoriond17_80X_mcRun2_asymptotic_2016_TrancheIV_v6-v1/80000/B8BB11E7-AABE-E611-A2A6-0025905B8582.root
+    'file:B8BB11E7-AABE-E611-A2A6-0025905B8582.root',
+    # 'file:../024D0A89-34C4-E611-AEF9-008CFA111348.root', # above  file
 
 # '/store/data/Run2016H/DoubleEG/MINIAOD/03Feb2017_ver2-v1/50000/246AAF40-B3EA-E611-BC2F-0CC47A7DFEC4.root',
 
