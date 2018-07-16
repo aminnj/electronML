@@ -15,3 +15,6 @@ cd electronML/Ntuplizer/python
 
 ## Running
 Use the pset in `python/run_cfg.py`
+
+## Converting
+See the README in `Analysis/new`
